@@ -12,6 +12,7 @@ pub struct Challenge {
     filename: String,
     bank: Bank,
     has_bank: bool,
+    banks: Vec<Bank>,
     json_questions: Vec<Bank>,
 }
 impl Challenge {
@@ -28,6 +29,7 @@ impl Challenge {
         let base = Base::new();
         let json_questions = base.load(&common["database_json"]);
         let filename = common["challenge_json"].clone();
+        let banks = base.load(&filename);
         let database_uri = &common["database_uri"];
         let db = DB::new(database_uri);
         Self {
@@ -37,6 +39,7 @@ impl Challenge {
             db: db,
             filename: filename,
             has_bank: false,
+            banks: banks,
             json_questions: json_questions,
         }
     }
@@ -49,14 +52,15 @@ impl Challenge {
     }
     pub fn run(&mut self) {
         let count = self.config["challenge_count"].parse().unwrap();
-        //let is_user = &self.config["is_user"];
         println!("开始挑战答题,挑战题数：{}", count);
         self.enter();
         sleep(Duration::from_secs(2));
         let mut i = 0;
         while i < count {
             self.submit();
-
+            let mut rng = thread_rng();
+            let challenge_delay = rng.gen_range(1, 5);
+            sleep(Duration::from_secs(challenge_delay));
             if self.base.positions("rule_judge_bounds").len() > 0 {
                 self.dump();
                 self.base.click("rule_close_bounds");
@@ -70,17 +74,12 @@ impl Challenge {
             if !self.has_bank {
                 self.db.add(&BankQuery::from(&self.bank));
             }
-            //self.is_user and self.json_blank.append(self.BankQuery.to_dict())
         }
         sleep(Duration::from_secs(30));
         println!("已经达成目标题数（{}题），退出挑战", i);
         self.base.return_home();
     }
     fn submit(&mut self) {
-        let mut rng = thread_rng();
-        let challenge_delay = rng.gen_range(1, 5);
-        sleep(Duration::from_secs(challenge_delay));
-
         let (content, options, mut positions) = self.base.content_options_positons(
             "rule_challenge_content",
             "rule_challenge_options_content",
@@ -130,35 +129,35 @@ impl Challenge {
         let (x, y) = positions[cursor];
         self.base.tap(x, y);
     }
-    fn dump(&self) {
-        let inner = |filename: &str| {
-            let mut banks = self.base.load(filename);
-            match banks.iter_mut().find(|b| **b == self.bank) {
-                Some(b) => b.notes.push_str(&self.bank.answer),
-                None => {
-                    let mut bank_clone = self.bank.clone();
-                    bank_clone.notes.push_str(&self.bank.answer);
-                    banks.push(bank_clone);
-                }
-            }
-            self.base.dump(filename, &banks);
-        };
+    fn dump(&mut self) {
         // 在note中追加一个错误答案，以供下次遇到排除
-        inner(&self.filename);
-
-        // 标记数据库中错误题目
+        let mut bank = self.bank.clone();
+        match self.banks.iter_mut().find(|b| **b == bank) {
+            Some(b) => b.notes.push_str(&self.bank.answer),
+            None => {
+                bank.notes.push_str(&self.bank.answer);
+                self.banks.push(bank);
+            }
+        }
+        self.base.dump(&self.filename, &self.banks);
+        // 删除数据库中错误题目
         if self.has_bank {
-            println!("标记数据库中错题。{:?}", &self.bank);
-            inner(&self.config["db_wrong_json"]);
+            println!("删除数据库中错题");
+            let bq = BankQuery::from(&self.bank);
+            self.db.delete(&bq);
         }
     }
     fn search(&self) -> String {
-        println!("search - {:?}", &self.bank);
+        println!("search - {:}", &self.bank.content);
         for b in &self.json_questions {
-            if *b == self.bank {
+            let mut b = b.clone();
+            b.content = b.content.replace('\u{a0}', " ");
+            if b == self.bank {
+                println!("search success: {}", &b.answer);
                 return b.answer.to_string();
             }
         }
+        println!("search failed");
         return "A".to_string();
     }
 }

@@ -43,7 +43,7 @@ fn delete() {
     let banks = android::load("./resource/db_wrong.json");
     for bank in &banks {
         let bq = BankQuery::from(bank);
-        db._delete(&bq);
+        db.delete(&bq);
     }
 }
 fn same() {

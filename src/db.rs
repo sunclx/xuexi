@@ -142,7 +142,7 @@ impl DB {
             .expect(&format!("添加答题失败。{:?}", &bankq));
         println!("添加的数据库成功");
     }
-    pub fn _delete(&self, bankq: &BankQuery) {
+    pub fn delete(&self, bankq: &BankQuery) {
         let c = RE.replace_all(bankq.content, "%");
         let target = banks
             .filter(category.eq(bankq.category))

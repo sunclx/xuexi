@@ -1,13 +1,12 @@
-use super::android::Android;
+use super::android;
 use config::{Config, File};
 use std::collections::HashMap;
 use std::thread::sleep;
 use std::time::Duration;
 pub struct Local {
-    // base: Base,
     config: HashMap<String, String>,
 }
-impl Android for Local {}
+
 impl Local {
     pub fn new() -> Self {
         let mut cfg = Config::default();
@@ -26,28 +25,28 @@ impl Local {
     }
 
     fn enter(&self) {
-        self.return_home();
+        android::return_home();
         let local_column_name = &self.config["local_column_name"];
         for _ in 0..10 {
-            let texts = self.texts("rule_columns_content");
-            let positions = self.positions("rule_columns_bounds");
+            let texts = android::texts("rule_columns_content");
+            let positions = android::positions("rule_columns_bounds");
             for (name, (x, y)) in texts.iter().zip(positions.iter()) {
                 if local_column_name == name {
-                    self.tap(*x, *y);
+                    android::tap(*x, *y);
                     return;
                 }
             }
             let (x0, y0) = positions[0];
             let (x1, y1) = positions[positions.len() - 2];
-            self.swipe(x1, y1, x0, y0, 500);
+            android::swipe(x1, y1, x0, y0, 500);
         }
     }
     pub fn run(&self) {
         println!("开始本地频道");
         self.enter();
-        self.click("rule_local_bounds");
+        android::click("rule_local_bounds");
         sleep(Duration::from_secs(15));
         println!("本地频道结束");
-        self.return_home();
+        android::return_home();
     }
 }
