@@ -24,7 +24,7 @@ impl Daily {
             .iter()
             .map(|(k, v)| (k.clone(), v.clone().into_str().unwrap()))
             .collect();
-        let database_uri = &common["challenge_json"];
+        let database_uri = &common["database_uri"];
         let db = DB::new(database_uri);
         let base = Base::new();
         Self {

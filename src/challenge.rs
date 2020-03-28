@@ -28,7 +28,7 @@ impl Challenge {
         let base = Base::new();
         let json_questions = base.load(&common["database_json"]);
         let filename = common["challenge_json"].clone();
-        let database_uri = &common["challenge_json"];
+        let database_uri = &common["database_uri"];
         let db = DB::new(database_uri);
         Self {
             base: base,
@@ -72,6 +72,7 @@ impl Challenge {
             }
             //self.is_user and self.json_blank.append(self.BankQuery.to_dict())
         }
+        sleep(Duration::from_secs(30));
         println!("已经达成目标题数（{}题），退出挑战", i);
         self.base.return_home();
     }

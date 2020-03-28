@@ -110,10 +110,10 @@ pub struct DB {
 impl DB {
     pub fn new(database_uri: &str) -> Self {
         let database_uri = match database_uri {
-            "" => "./data-dev.sqlite",
+            "" => "./resource/data-dev.sqlite",
             _ => database_uri,
         };
-        let connection = SqliteConnection::establish("./data-dev.sqlite")
+        let connection = SqliteConnection::establish(database_uri)
             .expect(&format!("链接数据库失败： {}", &database_uri));
         Self {
             connection: connection,

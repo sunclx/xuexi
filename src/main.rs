@@ -12,6 +12,16 @@ mod reader;
 mod viewer;
 
 fn main() {
+    let mut r = challenge::Challenge::new();
+    r.run();
+    let mut r = daily::Daily::new();
+    r.run();
+    let x = false;
+    if x {
+        xuexi()
+    }
+}
+fn xuexi() {
     let l = local::Local::new();
     l.run();
     let v = viewer::Viewer::new();

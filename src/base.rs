@@ -42,7 +42,7 @@ impl Base {
 
         let filename = config["xml_uri"].to_string();
         let ime = Base::get_ime();
-        Base::set_ime(ime.as_ref().unwrap());
+        Base::set_ime("com.android.adbkeyboard/.AdbIME");
 
         Self {
             config: config,
