@@ -87,7 +87,7 @@ impl Challenge {
             "rule_challenge_options_bounds",
         );
         self.bank.clear();
-        self.bank.category.push_str("挑战题");
+        self.bank.category.push_str("单选题");
         self.bank.content.push_str(&content);
         self.bank.options.push_str(&options);
         match &*self.db.query(&self.bank) {

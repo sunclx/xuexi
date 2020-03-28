@@ -128,6 +128,13 @@ impl DB {
             .load::<Bank>(&self.connection)
             .expect(&format!("查询答题失败。Bank:{:?}", &bank))
     }
+    pub fn query_content(&self, cnt: &str) -> Vec<Bank> {
+        let cnt = RE.replace_all(cnt, "%");
+        banks
+            .filter(content.like(&cnt))
+            .load::<Bank>(&self.connection)
+            .expect(&format!("查询答题失败。Bank:{:?}", &cnt))
+    }
     pub fn add(&self, bankq: &BankQuery) {
         diesel::insert_into(banks)
             .values(bankq)
@@ -141,9 +148,18 @@ impl DB {
             .filter(category.eq(bankq.category))
             .filter(content.like(c))
             .filter(options.eq(bankq.options));
-        diesel::delete(target)
-            .execute(&self.connection)
-            .expect(&format!("删除答题失败。BankQuery:{:?}", &bankq));
+        let out = diesel::delete(target).execute(&self.connection);
+        match out {
+            Ok(t) => {
+                println!("删除答题成功。BankQuery:{:?}", &bankq);
+                dbg!(t);
+            }
+            Err(e) => {
+                println!("删除答题失败。BankQuery:{:?}", &bankq);
+                dbg!(e);
+            }
+        }
+        // .expect(&format!("删除答题失败。BankQuery:{:?}", &bankq));
     }
     pub fn _update(&self, bankq: &BankQuery) {
         let c = RE.replace_all(bankq.content, "%");

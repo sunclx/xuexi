@@ -234,13 +234,22 @@ pub trait Android {
         let (x, y) = positions[0];
         self.tap(x, y);
     }
-    fn load<P: AsRef<Path>>(&self, path: P) -> Vec<Bank> {
+    fn load<P: AsRef<Path>>(path: P) -> Vec<Bank> {
         let s = std::fs::read_to_string(path).unwrap();
         let v: Vec<Bank> = serde_json::from_str(&s).unwrap();
         return v;
     }
-    fn dump<P: AsRef<Path>>(&self, path: P, banks: &Vec<Bank>) {
+    fn dump<P: AsRef<Path>>(path: P, banks: &Vec<Bank>) {
         let f = StdFile::create(path).unwrap();
         serde_json::to_writer_pretty(f, banks).unwrap();
     }
+}
+pub fn load<P: AsRef<Path>>(path: P) -> Vec<Bank> {
+    let s = std::fs::read_to_string(path).unwrap();
+    let v: Vec<Bank> = serde_json::from_str(&s).unwrap();
+    return v;
+}
+pub fn dump<P: AsRef<Path>>(path: P, banks: &Vec<Bank>) {
+    let f = StdFile::create(path).unwrap();
+    serde_json::to_writer_pretty(f, banks).unwrap();
 }

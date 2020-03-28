@@ -220,7 +220,7 @@ impl Base {
     }
     pub fn texts(&self, rule: &str) -> Vec<String> {
         self.uiautomator();
-        dbg!(rule);
+        // dbg!(rule);
         let xpath_rule = &self.config[rule];
         return self.xpath(xpath_rule);
     }
