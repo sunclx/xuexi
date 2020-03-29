@@ -128,7 +128,7 @@ impl DB {
             .load::<Bank>(&self.connection)
             .expect(&format!("查询答题失败。Bank:{:?}", &bank))
     }
-    pub fn query_content(&self, cnt: &str) -> Vec<Bank> {
+    pub fn _query_content(&self, cnt: &str) -> Vec<Bank> {
         let cnt = RE.replace_all(cnt, "%");
         banks
             .filter(content.like(&cnt))

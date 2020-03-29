@@ -1,13 +1,9 @@
-use super::base::Base;
+use super::android::*;
 use super::db::*;
-use config::{Config, File};
 use rand::{thread_rng, Rng};
-use std::collections::HashMap;
 use std::thread::sleep;
 use std::time::Duration;
 pub struct Challenge {
-    base: Base,
-    config: HashMap<String, String>,
     db: DB,
     filename: String,
     bank: Bank,
@@ -17,25 +13,13 @@ pub struct Challenge {
 }
 impl Challenge {
     pub fn new() -> Self {
-        let mut cfg = Config::default();
-        cfg.merge(File::with_name("./config-custom.ini")).unwrap();
-
-        let common: HashMap<_, _> = cfg
-            .get_table("common")
-            .unwrap()
-            .iter()
-            .map(|(k, v)| (k.clone(), v.clone().into_str().unwrap()))
-            .collect();
-        let base = Base::new();
-        let json_questions = base.load(&common["database_json"]);
-        let filename = common["challenge_json"].clone();
-        let banks = base.load(&filename);
-        let database_uri = &common["database_uri"];
+        let json_questions = load(config("database_json"));
+        let filename = get_config("challenge_json");
+        let banks = load(&filename);
+        let database_uri = config("database_uri");
         let db = DB::new(database_uri);
         Self {
-            base: base,
             bank: Bank::new(),
-            config: common,
             db: db,
             filename: filename,
             has_bank: false,
@@ -44,27 +28,26 @@ impl Challenge {
         }
     }
 
-    pub fn enter(&self) {
-        self.base.return_home();
-        self.base.click("rule_bottom_mine");
-        self.base.click("rule_quiz_entry");
-        self.base.click("rule_challenge_entry");
-    }
     pub fn run(&mut self) {
-        let count = self.config["challenge_count"].parse().unwrap();
+        let count = get_config("challenge_count");
         println!("开始挑战答题,挑战题数：{}", count);
-        self.enter();
+        return_home();
+        click("rule_bottom_mine");
+        click("rule_quiz_entry");
+        click("rule_challenge_entry");
         sleep(Duration::from_secs(2));
+
+        // 开始
         let mut i = 0;
         while i < count {
             self.submit();
             let mut rng = thread_rng();
             let challenge_delay = rng.gen_range(1, 5);
             sleep(Duration::from_secs(challenge_delay));
-            if self.base.positions("rule_judge_bounds").len() > 0 {
+            if positions("rule_judge_bounds").len() > 0 {
                 self.dump();
-                self.base.click("rule_close_bounds");
-                self.base.click("rule_again_bounds");
+                click("rule_close_bounds");
+                click("rule_again_bounds");
                 sleep(Duration::from_secs(2));
                 i = 0;
                 continue;
@@ -77,10 +60,10 @@ impl Challenge {
         }
         sleep(Duration::from_secs(30));
         println!("已经达成目标题数（{}题），退出挑战", i);
-        self.base.return_home();
+        return_home();
     }
     fn submit(&mut self) {
-        let (content, options, mut positions) = self.base.content_options_positons(
+        let (content, options, mut ptns) = content_options_positons(
             "rule_challenge_content",
             "rule_challenge_options_content",
             "rule_challenge_options_bounds",
@@ -103,7 +86,7 @@ impl Challenge {
                 println!("试探性提交答案 {}", &self.bank.answer);
             }
         }
-        let banks = self.base.load(&self.filename);
+        let banks = load(&self.filename);
         banks.into_iter().find(|b| *b == self.bank).map(|b| {
             let mut answer = self.bank.answer.clone();
             answer.push_str("ABCDEFGHIJKLMN");
@@ -116,18 +99,17 @@ impl Challenge {
             }
         });
         let mut cursor = self.bank.answer.chars().nth(0).unwrap() as usize - 65;
-        while positions.len() <= cursor {
+        while ptns.len() <= cursor {
             cursor -= 1;
         }
-
         // # 点击正确选项
-        while (0, 0) == positions[cursor] {
-            self.base.draw();
-            positions = self.base.positions("rule_challenge_options_bounds");
+        while (0, 0) == ptns[cursor] {
+            draw();
+            ptns = positions("rule_challenge_options_bounds");
         }
         // 现在可以安全点击(触摸)
-        let (x, y) = positions[cursor];
-        self.base.tap(x, y);
+        let (x, y) = ptns[cursor];
+        tap(x, y);
     }
     fn dump(&mut self) {
         // 在note中追加一个错误答案，以供下次遇到排除
@@ -139,7 +121,7 @@ impl Challenge {
                 self.banks.push(bank);
             }
         }
-        self.base.dump(&self.filename, &self.banks);
+        dump(&self.filename, &self.banks);
         // 删除数据库中错误题目
         if self.has_bank {
             println!("删除数据库中错题");
