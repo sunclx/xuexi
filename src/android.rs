@@ -295,8 +295,3 @@ pub fn dump<P: AsRef<Path>>(path: P, banks: &Vec<Bank>) {
     let f = StdFile::create(path).unwrap();
     serde_json::to_writer_pretty(f, banks).unwrap();
 }
-
-pub trait Widget {
-    fn new() -> Self;
-    fn start(&mut self);
-}

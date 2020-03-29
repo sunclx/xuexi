@@ -33,12 +33,3 @@ impl Local {
         return_home();
     }
 }
-
-impl Widget for Local {
-    fn new() -> Self {
-        Local
-    }
-    fn start(&mut self) {
-        self.run();
-    }
-}

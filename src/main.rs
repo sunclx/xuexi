@@ -16,17 +16,13 @@ fn main() {
     // let mut current = env::current_exe().unwrap();
     // current.pop();
     // env::set_current_dir(current).unwrap();
-    println!("{:?}", env::current_dir());
-    println!("{:}", android::DEVICE.to_string());
-    if false {
-        xuexi()
-    }
+    println!("当前工作目录{:?}", env::current_dir());
+    println!("手机设备名称： {:}", android::DEVICE.to_string());
+
+    xuexi()
 }
-// fn run<T: android::Widget>(mut w: T) {
-//     w.start();
-// }
+
 fn xuexi() {
-    // run(local::Local::new());
     local::Local::new().run();
     viewer::Viewer::new().run();
     reader::Reader::new().run();
