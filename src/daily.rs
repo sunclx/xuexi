@@ -2,8 +2,6 @@ use super::android::*;
 use super::db::*;
 use rand::{thread_rng, Rng};
 use std::iter::repeat;
-use std::thread::sleep;
-use std::time::Duration;
 pub struct Daily {
     db: DB,
     bank: Bank,
@@ -42,13 +40,13 @@ impl Daily {
             for _ in 0..count {
                 self.submit();
             }
-            if !forever && "领取奖励已达今日上限" == config("rule_score_reached") {
+            if !forever && texts("rule_score_reached").len() > 0 {
                 println!("大战{}回合，终于分数达标咯，告辞！", group);
                 return_home();
                 return;
             }
             println!("再来一组");
-            sleep(Duration::from_secs(daily_delay));
+            sleep(daily_delay);
             click("rule_next");
             group += 1
         }
@@ -66,18 +64,44 @@ impl Daily {
                 panic!("未知题目类型")
             }
         }
+        lazy_static! {
+            static ref SPOSITION: (usize, usize) = {
+                let mut submit_position = vec![];
+
+                for _ in 0..10 {
+                    if submit_position.len() > 0 {
+                        break;
+                    }
+                    submit_position = positions("rule_submit");
+                }
+                if submit_position.len() < 1 {
+                    (0, 0)
+                } else {
+                    submit_position[0]
+                }
+            };
+        }
+
+        match (SPOSITION.0, SPOSITION.1) {
+            (0, 0) => click("rule_submit"),
+            (x, y) => tap(x, y),
+        }
         // # 填好空格或选中选项后
-        click("rule_submit");
         // 提交答案后，获取答案解析，若为空，则回答正确，否则，返回正确答案
         match &*texts("rule_desc") {
             [des, ..] => {
                 self.bank.answer = des.replace(r"正确答案：", "");
                 println!("正确答案：{}", &self.bank.answer);
                 self.bank.notes.push_str(&texts("rule_note")[0]);
-                click("rule_submit");
+                match (SPOSITION.0, SPOSITION.1) {
+                    (0, 0) => click("rule_submit"),
+                    (x, y) => tap(x, y),
+                }
                 // 删除错误数据
                 if self.has_bank {
                     self.db.delete(&(&self.bank).into());
+                    self.db.add(&(&self.bank).into());
+                } else {
                     self.db.add(&(&self.bank).into());
                 }
             }
@@ -119,7 +143,7 @@ impl Daily {
         }
     }
     fn radio(&mut self) {
-        let (content, options, positions) =
+        let (content, options, mut ptns) =
             content_options_positons("rule_content", "rule_radio_options_content", "rule_options");
         self.bank.content = content;
         self.bank.options = options;
@@ -130,21 +154,35 @@ impl Daily {
                 let cursor = self.bank.answer.chars().nth(0).unwrap() as usize - 65;
                 println!("{}", &self.bank);
                 println!("自动提交答案 {}", &self.bank.answer);
-                let (x, y) = positions[cursor];
-                tap(x, y);
+                match ptns[cursor] {
+                    (0, 0) => {
+                        draw();
+                        ptns = positions("rule_options");
+                        let (x, y) = ptns[cursor];
+                        tap(x, y);
+                    }
+                    (x, y) => tap(x, y),
+                }
             }
             [] => {
                 self.has_bank = false;
                 println!("{}", &self.bank);
                 println!("默认提交答案: A");
                 self.bank.answer.push('A');
-                let (x, y) = positions[0];
-                tap(x, y);
+                match ptns[0] {
+                    (0, 0) => {
+                        draw();
+                        ptns = positions("rule_options");
+                        let (x, y) = ptns[0];
+                        tap(x, y);
+                    }
+                    (x, y) => tap(x, y),
+                }
             }
         }
     }
     fn check(&mut self) {
-        let (content, options, positions) =
+        let (content, options, mut ptns) =
             content_options_positons("rule_content", "rule_radio_options_content", "rule_options");
         self.bank.content = content;
         self.bank.options = options;
@@ -156,8 +194,15 @@ impl Daily {
                 println!("自动提交答案 {}", &self.bank.answer);
                 for c in self.bank.answer.chars() {
                     let cursor = c as usize - 65;
-                    let (x, y) = positions[cursor];
-                    tap(x, y);
+                    match ptns[cursor] {
+                        (0, 0) => {
+                            draw();
+                            ptns = positions("rule_options");
+                            let (x, y) = ptns[cursor];
+                            tap(x, y);
+                        }
+                        (x, y) => tap(x, y),
+                    }
                 }
             }
             [] => {
@@ -165,9 +210,17 @@ impl Daily {
                 println!("{}", &self.bank);
                 println!("默认提交答案: 全选");
                 let answers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-                for ((x, y), answer) in positions.iter().zip(answers.chars()) {
+                for (cursor, answer) in answers.chars().enumerate().take(ptns.len()) {
                     self.bank.answer.push(answer);
-                    tap(*x, *y);
+                    match ptns[cursor] {
+                        (0, 0) => {
+                            draw();
+                            ptns = positions("rule_options");
+                            let (x, y) = ptns[cursor];
+                            tap(x, y);
+                        }
+                        (x, y) => tap(x, y),
+                    }
                 }
             }
         }

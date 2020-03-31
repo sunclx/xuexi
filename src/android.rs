@@ -8,6 +8,8 @@ use std::fs::File as StdFile;
 use std::path::Path;
 use std::process::Command;
 use std::str::FromStr;
+use std::thread;
+use std::time::Duration;
 
 lazy_static! {
     static ref CFG: Config = {
@@ -36,6 +38,7 @@ lazy_static! {
         config
     };
     static ref FILENAME: String = {
+        &IME;
         set_ime("com.android.adbkeyboard/.AdbIME");
         CONFIG["xml_uri"].to_string()
     };
@@ -45,16 +48,18 @@ lazy_static! {
         connect(host, port);
         get_devices().expect("未连接设备")
     };
-    static ref IME: String = { get_ime().expect("获取输入法失败") };
+    pub static ref IME: String = { get_ime().expect("获取输入法失败") };
+    static ref SIZE: (usize, usize) = { size() };
+    static ref RE_POSITION: Regex = { Regex::new(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]").unwrap() };
 }
 pub fn config(key: &str) -> &str {
     COMMON.get(key).expect(&format!("get key({}) failed", key))
 }
 
 pub fn get_config<T: FromStr>(key: &str) -> T {
-    match key.parse::<T>() {
+    match COMMON[key].parse::<T>() {
         Ok(ok) => ok,
-        Err(_) => panic!(format!("get key({}) failed", key)),
+        Err(_) => panic!(format!("parse key({}) failed", key)),
     }
 }
 
@@ -81,7 +86,13 @@ pub fn tap(x: usize, y: usize) {
     swipe(x, y, x, y, 50)
 }
 pub fn draw() {
-    let (height, width) = size();
+    let xml = xpath("//hierarchy/node/@bounds");
+    let s = xml.get(0).expect("draw failed: xpath 错误");
+    let caps = RE_POSITION.captures(s).unwrap();
+    let x: usize = caps[3].parse().unwrap();
+    let y: usize = caps[4].parse().unwrap();
+
+    let (height, width) = (x, y);
     // 中点 三分之一点 三分之二点
     let (x0, x1) = (width / 2, width / 2);
     let (y0, y1) = (height / 4, height / 4 * 3);
@@ -144,26 +155,17 @@ pub fn get_ime() -> Option<String> {
 }
 
 pub fn get_devices() -> Option<String> {
-    let output = match Command::new("adb").arg("devices").output() {
-        Ok(output) => output,
-        Err(e) => {
-            println!("获取设备失败！！！");
-            dbg!(e);
-            return None;
-        }
-    };
+    let output = Command::new("adb")
+        .arg("devices")
+        .output()
+        .expect("adb devices 失败");
     let output = String::from_utf8_lossy(&output.stdout);
     let devices: Vec<_> = output
         .lines()
         .filter(|&line| line.ends_with("\tdevice"))
         .map(|line| line.trim_end_matches("\tdevice"))
         .collect();
-
-    if devices.len() > 0 {
-        Some(devices[0].to_string())
-    } else {
-        None
-    }
+    devices.get(0).map(|x| x.to_string())
 }
 pub fn size() -> (usize, usize) {
     let output = Command::new("adb")
@@ -178,8 +180,9 @@ pub fn size() -> (usize, usize) {
         .captures_iter(&res)
         .map(|cap| cap[0].parse::<usize>().unwrap())
         .collect();
+    let l = nums.len();
 
-    return (nums[0], nums[1]);
+    return (nums[l - 2], nums[l - 1]);
 }
 pub fn uiautomator() {
     Command::new("adb")
@@ -192,17 +195,25 @@ pub fn uiautomator() {
             "/sdcard/ui.xml",
         ])
         .output()
-        .unwrap();
+        .expect(&format!(
+            "adb failed: adb -s {:} shell uiautomator dump /sdcard/ui.xml",
+            DEVICE.as_str()
+        ));
     Command::new("adb")
         .args(&["pull", "/sdcard/ui.xml", &FILENAME])
         .output()
-        .unwrap();
+        .expect(&format!(
+            "adb failed: adb pull /scdcard/ui.xml {}",
+            FILENAME.as_str()
+        ));
 }
 pub fn xpath(xpath_rule: &str) -> Vec<String> {
-    let xml = read_to_string(FILENAME.as_str()).unwrap();
-    let dom = new_document(&xml).unwrap();
-    let root = dom.root_element();
-    let res = root.get_nodeset(xpath_rule).unwrap();
+    let xml = read_to_string(FILENAME.as_str()).expect("读取xml文件失败");
+    let res = new_document(&xml)
+        .expect("解析xml文件失败")
+        .root_element()
+        .get_nodeset(xpath_rule)
+        .expect("xpath 执行失败");
     let v: Vec<String> = res
         .iter()
         .map(|x| x.value().replace('\u{a0}', " "))
@@ -218,10 +229,9 @@ pub fn texts(rule: &str) -> Vec<String> {
 }
 
 pub fn positions(rule: &str) -> Vec<(usize, usize)> {
-    let re = Regex::new(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]").unwrap();
     let mut v: Vec<(usize, usize)> = vec![];
     for s in texts(rule) {
-        let caps = re.captures(&s).unwrap();
+        let caps = RE_POSITION.captures(&s).unwrap();
         let x0: usize = caps[1].parse().unwrap();
         let y0: usize = caps[2].parse().unwrap();
         let x1: usize = caps[3].parse().unwrap();
@@ -245,13 +255,11 @@ pub fn content_options_positons(
 
     let content = xpath(content)[0].clone();
     let options = xpath(options).join("|");
-
     let positions = xpath(positions);
-    let re = Regex::new(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]").unwrap();
     let positions = positions
         .iter()
         .map(|s| {
-            let cap = re.captures(s).unwrap();
+            let cap = RE_POSITION.captures(s).unwrap();
             let x0: usize = cap[1].parse().unwrap();
             let y0: usize = cap[2].parse().unwrap();
             let x1: usize = cap[3].parse().unwrap();
@@ -294,4 +302,8 @@ pub fn load<P: AsRef<Path>>(path: P) -> Vec<Bank> {
 pub fn dump<P: AsRef<Path>>(path: P, banks: &Vec<Bank>) {
     let f = StdFile::create(path).unwrap();
     serde_json::to_writer_pretty(f, banks).unwrap();
+}
+
+pub fn sleep(second: u64) {
+    thread::sleep(Duration::from_secs(second));
 }

@@ -1,6 +1,5 @@
 use super::android::*;
-use std::thread::sleep;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 pub struct Viewer;
 impl Viewer {
     pub fn new() -> Self {
@@ -18,7 +17,7 @@ impl Viewer {
         for i in 0..count {
             let now = Instant::now();
             println!("观看视频第{}则{}秒", i + 1, delay);
-            sleep(Duration::from_secs(delay));
+            sleep(delay);
             draw();
             println!("完成试听学习第{}则，耗时{:?}秒", i + 1, now.elapsed());
             println!("进入下一个视频");

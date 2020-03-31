@@ -9,7 +9,8 @@ mod db;
 mod local;
 mod reader;
 mod viewer;
-use db::{BankQuery, DB};
+use db::{Bank, BankQuery, DB};
+use std::collections::HashMap;
 use std::env;
 
 fn main() {
@@ -17,18 +18,32 @@ fn main() {
     // current.pop();
     // env::set_current_dir(current).unwrap();
     println!("当前工作目录{:?}", env::current_dir());
-    println!("手机设备名称： {:}", android::DEVICE.to_string());
-
-    xuexi()
+    android::return_home();
+    android::click("rule_bottom_mine");
+    android::click("rule_bonus_entry");
+    let titles = android::texts("rule_bonus_title");
+    let scores = android::texts("rule_bonus_score");
+    let bonus: HashMap<_, _> = titles.into_iter().zip(scores.into_iter()).collect();
+    dbg!(&bonus);
+    let completed = "已完成";
+    if completed != bonus["本地频道"] {
+        local::Local::new().run();
+    }
+    if completed != bonus["视听学习"] || completed != bonus["视听学习时长"] {
+        viewer::Viewer::new().run();
+    }
+    if completed != bonus["阅读文章"] || completed != bonus["文章学习时长"] {
+        reader::Reader::new().run();
+    }
+    if completed != bonus["挑战答题"] {
+        challenge::Challenge::new().run();
+    }
+    if completed != bonus["每日答题"] {
+        daily::Daily::new().run();
+    }
+    android::set_ime(&android::IME);
 }
 
-fn xuexi() {
-    local::Local::new().run();
-    viewer::Viewer::new().run();
-    reader::Reader::new().run();
-    challenge::Challenge::new().run();
-    daily::Daily::new().run();
-}
 fn _delete() {
     let database_uri = "./resource/data-dev.sqlite";
     let db = DB::new(database_uri);
@@ -63,9 +78,9 @@ fn _same() {
 
 fn _add() {
     let db1 = DB::new("./resource/data-dev.sqlite");
-
     let banks1 = db1._query_content("%");
-    let mut banks2 = android::load("./resource/all1.json");
+
+    let mut banks2 = _banks_from_json("./resource/all1.json");
     for bank in &mut banks2 {
         bank.content = bank.content.replace('\u{a0}', " ");
         if !banks1.contains(bank) {
@@ -73,4 +88,11 @@ fn _add() {
             db1.add(&bank.into());
         }
     }
+}
+fn _banks_from_db(path: &str) -> Vec<Bank> {
+    let db = DB::new(path);
+    db._query_content("%")
+}
+fn _banks_from_json(path: &str) -> Vec<Bank> {
+    android::load(path)
 }

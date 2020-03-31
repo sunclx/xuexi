@@ -1,19 +1,15 @@
 use super::android::*;
 use super::db::*;
 use rand::{thread_rng, Rng};
-use std::thread::sleep;
-use std::time::Duration;
 pub struct Challenge {
     db: DB,
     filename: String,
     bank: Bank,
     has_bank: bool,
     banks: Vec<Bank>,
-    json_questions: Vec<Bank>,
 }
 impl Challenge {
     pub fn new() -> Self {
-        let json_questions = load(config("database_json"));
         let filename = get_config("challenge_json");
         let banks = load(&filename);
         let database_uri = config("database_uri");
@@ -24,7 +20,6 @@ impl Challenge {
             filename: filename,
             has_bank: false,
             banks: banks,
-            json_questions: json_questions,
         }
     }
 
@@ -35,20 +30,20 @@ impl Challenge {
         click("rule_bottom_mine");
         click("rule_quiz_entry");
         click("rule_challenge_entry");
-        sleep(Duration::from_secs(2));
+        sleep(2);
 
         // 开始
         let mut i = 0;
+        let mut rng = thread_rng();
         while i < count {
             self.submit();
-            let mut rng = thread_rng();
             let challenge_delay = rng.gen_range(1, 5);
-            sleep(Duration::from_secs(challenge_delay));
+            sleep(challenge_delay);
             if positions("rule_judge_bounds").len() > 0 {
                 self.dump();
                 click("rule_close_bounds");
                 click("rule_again_bounds");
-                sleep(Duration::from_secs(2));
+                sleep(2);
                 i = 0;
                 continue;
             }
@@ -58,8 +53,8 @@ impl Challenge {
                 self.db.add(&BankQuery::from(&self.bank));
             }
         }
-        sleep(Duration::from_secs(30));
         println!("已经达成目标题数（{}题），退出挑战", i);
+        sleep(30);
         return_home();
     }
     fn submit(&mut self) {
@@ -82,22 +77,21 @@ impl Challenge {
             [] => {
                 self.has_bank = false;
                 println!("{}", &self.bank);
-                self.bank.answer.push_str(&self.search());
+                self.bank.answer.push('A');
                 println!("试探性提交答案 {}", &self.bank.answer);
             }
         }
-        let banks = load(&self.filename);
-        banks.into_iter().find(|b| *b == self.bank).map(|b| {
-            let mut answer = self.bank.answer.clone();
-            answer.push_str("ABCDEFGHIJKLMN");
-            for c in answer.chars() {
+        let mut bank = self.bank.clone();
+        if let Some(b) = self.banks.iter_mut().find(|b| **b == bank) {
+            bank.answer.push_str("ABCDEFGHIJKLMN");
+            for c in bank.answer.chars() {
                 if !b.notes.contains(c) {
                     self.bank.answer.clear();
                     self.bank.answer.push(c);
                     break;
                 }
             }
-        });
+        };
         let mut cursor = self.bank.answer.chars().nth(0).unwrap() as usize - 65;
         while ptns.len() <= cursor {
             cursor -= 1;
@@ -128,18 +122,5 @@ impl Challenge {
             let bq = BankQuery::from(&self.bank);
             self.db.delete(&bq);
         }
-    }
-    fn search(&self) -> String {
-        println!("search - {:}", &self.bank.content);
-        for b in &self.json_questions {
-            let mut b = b.clone();
-            b.content = b.content.replace('\u{a0}', " ");
-            if b == self.bank {
-                println!("search success: {}", &b.answer);
-                return b.answer.to_string();
-            }
-        }
-        println!("search failed");
-        return "A".to_string();
     }
 }

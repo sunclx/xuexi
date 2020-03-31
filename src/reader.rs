@@ -1,6 +1,5 @@
 use super::android::*;
-use std::thread::sleep;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 pub struct Reader;
 impl Reader {
     pub fn new() -> Self {
@@ -27,7 +26,7 @@ impl Reader {
                 tap(*x, *y);
                 let now = Instant::now();
                 article_list.push(title.to_string());
-                sleep(Duration::from_secs(1));
+                sleep(1);
                 self.read_new(delay);
                 if ssc > 0 {
                     ssc -= self.star_share_comment();
@@ -58,12 +57,11 @@ impl Reader {
         }
     }
     fn read_new(&self, delay: u64) {
-        let slide_times = 2;
-        for _ in 0..slide_times {
-            sleep(Duration::from_secs(delay / slide_times));
-            draw();
-        }
-        sleep(Duration::from_secs(1));
+        sleep(delay / 3);
+        draw();
+        sleep(delay / 3);
+        draw();
+        sleep(delay / 3);
     }
     fn star_share_comment(&self) -> usize {
         let keep_star_comment: bool = get_config("keep_star_comment");
@@ -73,9 +71,7 @@ impl Reader {
         }
         //  分享
         click("rule_share_bounds");
-        sleep(Duration::from_secs(2));
         click("rule_share2xuexi_bounds");
-        sleep(Duration::from_secs(2));
         println!("分享一篇文章!");
         back();
 

@@ -1,6 +1,4 @@
 use super::android::*;
-use std::thread::sleep;
-use std::time::Duration;
 pub struct Local;
 
 impl Local {
@@ -28,7 +26,7 @@ impl Local {
         println!("开始本地频道");
         self.enter();
         click("rule_local_bounds");
-        sleep(Duration::from_secs(15));
+        sleep(10);
         println!("本地频道结束");
         return_home();
     }
