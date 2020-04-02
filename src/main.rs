@@ -14,16 +14,25 @@ use std::collections::HashMap;
 use std::env;
 
 fn main() {
-    // let mut current = env::current_exe().unwrap();
-    // current.pop();
-    // env::set_current_dir(current).unwrap();
+    let mut current = env::current_exe().unwrap();
+    current.pop();
+    env::set_current_dir(current).unwrap();
+
     println!("当前工作目录{:?}", env::current_dir());
+    println!("设备名称: {}", android::DEVICE.as_str());
+
+    println!("获取学习积分情况");
     android::return_home();
     android::click("rule_bottom_mine");
     android::click("rule_bonus_entry");
-    let titles = android::texts("rule_bonus_title");
-    let scores = android::texts("rule_bonus_score");
-    let bonus: HashMap<_, _> = titles.into_iter().zip(scores.into_iter()).collect();
+
+    let mut bonus = HashMap::new();
+    android::texts("rule_bonus_title");
+    while bonus.len() == 0 {
+        let titles = android::texts("rule_bonus_title");
+        let scores = android::texts("rule_bonus_score");
+        bonus = titles.into_iter().zip(scores.into_iter()).collect();
+    }
     dbg!(&bonus);
     let completed = "已完成";
     if completed != bonus["本地频道"] {
@@ -53,6 +62,25 @@ fn _delete() {
         db.delete(&bq);
     }
 }
+fn _query() {
+    let database_uri = "./resource/data-dev.sqlite";
+    let db = DB::new(database_uri);
+    let mut banks = db._query_content("%");
+    banks = banks
+        .into_iter()
+        .filter(|bank| bank.category == "填空题")
+        .map(|mut bank| {
+            bank.answer = bank.answer.replace(" ", "");
+            bank
+        })
+        .map(|mut bank| {
+            bank.options = bank.answer.chars().count().to_string();
+            bank
+        })
+        .collect();
+
+    android::dump("./resource/blank.json", &banks);
+}
 fn _same() {
     let database_uri = "./resource/data-dev.sqlite";
     let db = DB::new(database_uri);
@@ -80,7 +108,7 @@ fn _add() {
     let db1 = DB::new("./resource/data-dev.sqlite");
     let banks1 = db1._query_content("%");
 
-    let mut banks2 = _banks_from_json("./resource/all1.json");
+    let mut banks2 = _banks_from_json("./resource/same.json");
     for bank in &mut banks2 {
         bank.content = bank.content.replace('\u{a0}', " ");
         if !banks1.contains(bank) {

@@ -17,6 +17,7 @@ lazy_static! {
         config
             .merge(File::with_name("./config-custom.ini"))
             .expect("加载config-custom.ini失败");
+        dbg!(&config);
         config
     };
     static ref COMMON: HashMap<String, String> = {
@@ -52,6 +53,7 @@ lazy_static! {
     static ref SIZE: (usize, usize) = { size() };
     static ref RE_POSITION: Regex = { Regex::new(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]").unwrap() };
 }
+static ADB: &'static str = "./resource/ADB/ADB";
 pub fn config(key: &str) -> &str {
     COMMON.get(key).expect(&format!("get key({}) failed", key))
 }
@@ -64,7 +66,7 @@ pub fn get_config<T: FromStr>(key: &str) -> T {
 }
 
 pub fn swipe(x0: usize, y0: usize, x1: usize, y1: usize, duration: usize) {
-    Command::new("adb")
+    Command::new(ADB)
         .args(&[
             "shell",
             "input",
@@ -77,7 +79,7 @@ pub fn swipe(x0: usize, y0: usize, x1: usize, y1: usize, duration: usize) {
         ])
         .output()
         .expect(&format!(
-            "faild: adb shell input swipe {:} {:} {:} {:} {:}",
+            "faild: ADB shell input swipe {:} {:} {:} {:} {:}",
             x0, y0, x1, y1, duration
         ));
     return;
@@ -99,13 +101,13 @@ pub fn draw() {
     swipe(x1, y1, x0, y0, 500);
 }
 pub fn back() {
-    Command::new("adb")
+    Command::new(ADB)
         .args(&["-s", &DEVICE, "shell", "input", "keyevent", &4.to_string()])
         .output()
         .expect("faild: input keyevent 4");
 }
 pub fn input(msg: &str) {
-    Command::new("adb")
+    Command::new(ADB)
         .args(&[
             "-s",
             &DEVICE,
@@ -120,33 +122,33 @@ pub fn input(msg: &str) {
         ])
         .output()
         .expect(&format!(
-            "faild: adb shell am broadcast -a ADB_INPUT_TEXT --es msg {:}",
+            "faild: ADB shell am broadcast -a ADB_INPUT_TEXT --es msg {:}",
             msg
         ));
 }
 pub fn connect(host: &str, port: &str) {
-    Command::new("adb")
+    Command::new(ADB)
         .arg("connect")
         .arg(format!("{:}:{:}", host, port))
         .output()
-        .expect(&format!("adb connect {:}:{:} failed", host, port));
+        .expect(&format!("ADB connect {:}:{:} failed", host, port));
 }
 pub fn _disconnect(host: &str, port: &str) {
-    Command::new("adb")
+    Command::new(ADB)
         .arg("disconnect")
         .arg(format!("{:}:{:}", host, port))
         .output()
-        .expect(&format!("adb disconnect {:}:{:} failed", host, port));
+        .expect(&format!("ADB disconnect {:}:{:} failed", host, port));
 }
 pub fn set_ime(ime: &str) {
-    Command::new("adb")
+    Command::new(ADB)
         .args(&["-s", &DEVICE, "shell", "ime", "set", ime])
         .output()
-        .expect(&format!("adb shell ime set {} failde", ime));
+        .expect(&format!("ADB shell ime set {} failde", ime));
 }
 
 pub fn get_ime() -> Option<String> {
-    let output = Command::new("adb")
+    let output = Command::new(ADB)
         .args(&["-s", &DEVICE, "shell", "ime", "list", "-s"])
         .output()
         .expect("获取输入法失败");
@@ -155,10 +157,10 @@ pub fn get_ime() -> Option<String> {
 }
 
 pub fn get_devices() -> Option<String> {
-    let output = Command::new("adb")
+    let output = Command::new(ADB)
         .arg("devices")
         .output()
-        .expect("adb devices 失败");
+        .expect("ADB devices 失败");
     let output = String::from_utf8_lossy(&output.stdout);
     let devices: Vec<_> = output
         .lines()
@@ -168,10 +170,10 @@ pub fn get_devices() -> Option<String> {
     devices.get(0).map(|x| x.to_string())
 }
 pub fn size() -> (usize, usize) {
-    let output = Command::new("adb")
+    let output = Command::new(ADB)
         .args(&["-s", &DEVICE, "shell", "wm", "size"])
         .output()
-        .expect("failed: adb shell wm size");
+        .expect("failed: ADB shell wm size");
     let res = String::from_utf8_lossy(&output.stdout);
     lazy_static! {
         static ref RE: Regex = Regex::new(r"(\d+)").unwrap();
@@ -185,7 +187,7 @@ pub fn size() -> (usize, usize) {
     return (nums[l - 2], nums[l - 1]);
 }
 pub fn uiautomator() {
-    Command::new("adb")
+    Command::new(ADB)
         .args(&[
             "-s",
             &DEVICE,
@@ -196,14 +198,14 @@ pub fn uiautomator() {
         ])
         .output()
         .expect(&format!(
-            "adb failed: adb -s {:} shell uiautomator dump /sdcard/ui.xml",
+            "ADB failed: ADB -s {:} shell uiautomator dump /sdcard/ui.xml",
             DEVICE.as_str()
         ));
-    Command::new("adb")
+    Command::new(ADB)
         .args(&["pull", "/sdcard/ui.xml", &FILENAME])
         .output()
         .expect(&format!(
-            "adb failed: adb pull /scdcard/ui.xml {}",
+            "ADB failed: ADB pull /scdcard/ui.xml {}",
             FILENAME.as_str()
         ));
 }
@@ -225,6 +227,7 @@ pub fn texts(rule: &str) -> Vec<String> {
     uiautomator();
     // dbg!(rule);
     let xpath_rule = &CONFIG[rule];
+    // dbg!(xpath_rule);
     return xpath(xpath_rule);
 }
 

@@ -1,8 +1,5 @@
 -- SQLite
-SELECT id, category, content, options, answer, notes, bounds
-FROM `banks`
-WHERE answer="";
 
-DELETE
+SELECT *
 FROM banks
-WHERE answer="";
+WHERE category = "填空题";

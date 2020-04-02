@@ -1,7 +1,6 @@
 use super::android::*;
 use super::db::*;
 use rand::{thread_rng, Rng};
-use std::iter::repeat;
 pub struct Daily {
     db: DB,
     bank: Bank,
@@ -126,18 +125,19 @@ impl Daily {
                 self.bank.answer.push_str(&b.answer);
                 println!("{}", &self.bank);
                 println!("自动提交答案 {}", &self.bank.answer);
-                for (answer, (x, y)) in self.bank.answer.split(" ").zip(edits.iter()) {
+                let answer = self.bank.answer.replace(" ", "");
+                for (answer, (x, y)) in answer.chars().zip(edits.iter()) {
                     tap(*x, *y);
-                    input(answer);
+                    input(&answer.to_string());
                 }
             }
             [] => {
                 self.has_bank = false;
                 println!("{}", &self.bank);
                 println!("默认提交答案: 不忘初心牢记使命");
-                for ((x, y), answer) in edits.iter().zip(repeat("不忘初心牢记使命")) {
+                for ((x, y), answer) in edits.iter().zip("不忘初心牢记使命".chars()) {
                     tap(*x, *y);
-                    input(answer);
+                    input(&answer.to_string());
                 }
             }
         }

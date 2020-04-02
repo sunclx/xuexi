@@ -17,8 +17,6 @@ pub struct Bank {
     pub options: String,
     pub answer: String,
     pub notes: String,
-    #[serde(skip)]
-    pub bounds: String,
 }
 impl Bank {
     pub fn new() -> Self {
@@ -29,7 +27,6 @@ impl Bank {
             options: "".to_string(),
             answer: "".to_string(),
             notes: "".to_string(),
-            bounds: "".to_string(),
         }
     }
     pub fn clear(&mut self) {
@@ -39,7 +36,6 @@ impl Bank {
         self.options.clear();
         self.answer.clear();
         self.notes.clear();
-        self.bounds.clear();
     }
 }
 impl PartialEq for Bank {
@@ -55,7 +51,6 @@ impl<'a> From<&'a Bank> for BankQuery<'a> {
             options: &bank.options,
             answer: &bank.answer,
             notes: &bank.notes,
-            bounds: "",
         }
     }
 }
@@ -68,7 +63,6 @@ pub struct BankQuery<'a> {
     pub options: &'a str,
     pub answer: &'a str,
     pub notes: &'a str,
-    pub bounds: &'a str,
 }
 
 impl<'a> fmt::Display for Bank {
@@ -98,7 +92,6 @@ table! {
         options-> Text,
         answer-> Text,
         notes-> Text,
-        bounds-> Text,
     }
 }
 use self::banks::dsl::*;
@@ -136,13 +129,19 @@ impl DB {
             .expect(&format!("查询答题失败。Bank:{:?}", &cnt))
     }
     pub fn add(&self, bankq: &BankQuery) {
+        if bankq.content.trim() == "" {
+            return;
+        }
         diesel::insert_into(banks)
             .values(bankq)
             .execute(&self.connection)
             .expect(&format!("添加答题失败。{:?}", &bankq));
-        println!("添加的数据库成功");
+        println!("添加到数据库成功");
     }
     pub fn delete(&self, bankq: &BankQuery) {
+        if bankq.content.trim() == "" {
+            return;
+        }
         let c = RE.replace_all(bankq.content, "%");
         let target = banks
             .filter(category.eq(bankq.category))
