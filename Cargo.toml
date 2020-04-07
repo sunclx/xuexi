@@ -9,7 +9,6 @@ edition = "2018"
 [dependencies]
 regex = "1"
 amxml = "*"
-config = "*"
 diesel = { version = "1",features = ["sqlite"]}
 lazy_static ="1"
 serde_json = "1"

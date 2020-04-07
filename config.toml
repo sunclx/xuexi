@@ -1,5 +1,5 @@
 # 设备名称 指明连接的安卓设备, 需要同名[section]
-device = 'mumu'
+device = 'huawei'
 # 数据库URI
 # 目前仅使用database_uri， 另两个是担心以后每日答题和挑战答题出现同一题造成bug，只要将三个配置成一样即可
 database_uri = './resource/data-dev.sqlite'
@@ -46,7 +46,7 @@ keep_star_comment = false
 # mumu模拟器
 [mumu]
 # 设备类型是否为模拟器 true | false
-is_virtual_machine = true
+is_virtual_machine = 'true'
 xml_uri = './resource/uimumu.xml'
 # host:port 指明连接的模拟器, 当is_virtual_machine = true 时有效
 # 主机 host 默认127.0.0.1
@@ -163,7 +163,7 @@ rule_comment2_bounds ='//node[@class="android.widget.EditText"]/@bounds'
 # 华为P10PLUS
 [huawei]
 # 设备类型是否为模拟器 true | false
-is_virtual_machine = false
+is_virtual_machine = 'false'
 xml_uri = './resource/uimumu.xml'
 host = '127.0.0.1'
 port = '5555'
@@ -201,13 +201,13 @@ rule_bonus_score ='//node[@class="android.widget.ListView"]/node/node[@index="3"
 rule_type ='//node[@content-desc="1 /10" or @content-desc="2 /10" or @content-desc="3 /10" or @content-desc="4 /10" or @content-desc="5 /10" or @content-desc="6 /10" or @content-desc="7 /10" or @content-desc="8 /10" or @content-desc="9 /10"  or @content-desc="10 /10"]/preceding-sibling::node[1]/@content-desc'
 # 题干
 rule_content ='//node[@class="android.widget.ListView"]/../node[@index="1"]/@content-desc'
-rule_blank_content ='//node[@class="android.widget.EditText"]/../../node[@class="android.view.View"]/@content-desc'
+rule_blank_content ='//node[@class="android.widget.EditText"]/../node[@class="android.view.View"]/@content-desc'
 #//node[@content-desc="1 /10" or @content-desc="2 /10" or @content-desc="3 /10" or @content-desc="4 /10" or @content-desc="5 /10" or @content-desc="6 /10" or @content-desc="7 /10" or @content-desc="8 /10" or @content-desc="9 /10"  or @content-desc="10 /10"]/../following-sibling::node[1]/node/node[@class="android.view.View"]/@content-desc
 # 选项坐标
 rule_options ='//node[@class="android.widget.ListView"]/node/@bounds'
 rule_radio_options_content = '//node[@class="android.widget.ListView"]/node//node[@index="2" and @class="android.view.View"]/@content-desc'
 # 填空题输入框坐标
-rule_edits ='//node[@class="android.widget.EditText"]/following-sibling::node[1]/@bounds'
+rule_edits ='//node[@class="android.widget.EditText"]/following-sibling::node[@NAF]/@bounds'
 # 分数
 rule_score ='//node[@content-desc="积分： "]/following-sibling::node[1]/@content-desc'
 rule_score_reached ='//node[@content-desc="领取奖励已达今日上限"]/@content-desc'
@@ -231,7 +231,7 @@ rule_challenge_options_content ='//node[@class="android.widget.ListView"]/node//
 # 选项坐标
 rule_challenge_options_bounds ='//node[@class="android.widget.ListView"]/node/@bounds'
 # 复活按钮和再来一局按钮坐标
-rule_judge_bounds ='//node[@content-desc="分享就能复活" or @content-desc="再来一局"]/@bounds'
+rule_judge_bounds ='//node[@content-desc="分享就能复活" or @text="挑战结束" or @content-desc="挑战结束"]/@bounds'
 rule_revive_bounds ='//node[@content-desc="分享就能复活"]/@bounds'
 rule_again_bounds ='//node[@content-desc="再来一局"]/@bounds'
 rule_close_bounds ='//node[@content-desc="结束本局"]/@bounds'

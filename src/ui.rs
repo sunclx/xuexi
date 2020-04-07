@@ -5,13 +5,13 @@ use druid::widget::{
 use druid::{AppLauncher, Data, Key, Lens, LensWrap, LocalizedString, WindowDesc};
 
 #[derive(Clone, Data, Lens)]
-struct ArgsState {
-    auto: bool,
-    local: bool,
-    article: bool,
-    video: bool,
-    challenge: bool,
-    daily: bool,
+pub struct ArgsState {
+    pub auto: bool,
+    pub local: bool,
+    pub article: bool,
+    pub video: bool,
+    pub challenge: bool,
+    pub daily: bool,
 }
 const WINDOW_TITLE: LocalizedString<ArgsState> = LocalizedString::new("学习强国");
 pub const FONT_NAME: Key<&str> = Key::new("font_name");
@@ -32,11 +32,11 @@ fn build_ui() -> impl Widget<ArgsState> {
         .with_child(Checkbox::new("每日答题").lens(ArgsState::daily))
         .padding(5.0);
     let either = Either::new(|data, _| data.auto, Flex::row(), checks);
-    let button = Button::new("开始").on_click(|_, _, _env| {
+    let button = Button::new("开始").on_click(|_ctx, data: &mut ArgsState, _env| {
         use std::thread;
-
+        let data = data.clone();
         thread::spawn(move || {
-            super::xuexi()
+            super::xuexi(data)
             // some work here
         });
         println!("button：开始");
