@@ -1,4 +1,5 @@
-use super::android::*;
+use super::android::{click, positions, return_home, sleep, swipe, tap, texts};
+use super::config::CFG;
 pub struct Local;
 
 impl Local {
@@ -7,7 +8,7 @@ impl Local {
     }
     fn enter(&self) {
         return_home();
-        let local_column_name = config("local_column_name");
+        let local_column_name = &CFG.local_column_name;
         for _ in 0..10 {
             let txts = texts("rule_columns_content");
             let ptns = positions("rule_columns_bounds");

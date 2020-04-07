@@ -1,4 +1,6 @@
-use super::android::*;
+use super::android::{
+    click, content_options_positons, draw, dump, load, positions, return_home, sleep, tap,
+};
 use super::config::CFG;
 use super::db::*;
 use rand::{thread_rng, Rng};

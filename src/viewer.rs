@@ -1,4 +1,4 @@
-use super::android::*;
+use super::android::{back, click, draw, return_home, sleep};
 use super::config::CFG;
 use std::time::Instant;
 pub struct Viewer;

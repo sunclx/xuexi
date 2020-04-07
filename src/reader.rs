@@ -1,17 +1,19 @@
-use super::android::*;
+use super::android::{back, click, draw, input, positions, return_home, sleep, swipe, tap, texts};
+use super::config::CFG;
 use std::time::Instant;
+
 pub struct Reader;
+
 impl Reader {
     pub fn new() -> Self {
         Self
     }
-
     pub fn run(&self) {
         println!("开始新闻学习");
         self.enter();
-        let count = get_config("article_count");
-        let delay = get_config("article_delay");
-        let mut ssc: usize = get_config("star_share_comment");
+        let count = CFG.article_count;
+        let delay = CFG.article_delay;
+        let mut ssc = CFG.star_share_comment;
 
         let mut i = 1;
         let mut article_list = Vec::<String>::new();
@@ -41,7 +43,7 @@ impl Reader {
     }
     fn enter(&self) {
         return_home();
-        let article_column_name = config("article_column_name");
+        let article_column_name = &CFG.article_column_name;
         for _ in 0..10 {
             let texts = texts("rule_columns_content");
             let positions = positions("rule_columns_bounds");
@@ -63,8 +65,8 @@ impl Reader {
         draw();
         sleep(delay / 3);
     }
-    fn star_share_comment(&self) -> usize {
-        let keep_star_comment: bool = get_config("keep_star_comment");
+    fn star_share_comment(&self) -> u64 {
+        let keep_star_comment = CFG.keep_star_comment;
         let p = texts("rule_comment_bounds");
         if p.len() != 1 {
             return 0;

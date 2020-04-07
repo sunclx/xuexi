@@ -1,4 +1,7 @@
-use super::android::*;
+use super::android::{
+    click, content_options_positons, draw, input, positions, return_home, sleep, tap, texts,
+};
+use super::config::CFG;
 use super::db::*;
 use rand::{thread_rng, Rng};
 pub struct Daily {
@@ -8,7 +11,9 @@ pub struct Daily {
 }
 impl Daily {
     pub fn new() -> Self {
-        let database_uri = config("database_uri");
+        let database_uri = &CFG.database_uri;
+
+        //  config("database_uri");
         let db = DB::new(database_uri);
         Self {
             bank: Bank::new(),
@@ -27,8 +32,8 @@ impl Daily {
         // # 每日答题，每组题数
         let count = 10;
         // # 是否永远答题
-        let forever: bool = get_config("daily_forever");
-        let daily_delay: u64 = get_config("daily_delay");
+        let forever = CFG.daily_forever;
+        let daily_delay = CFG.daily_delay;
         let mut rng = thread_rng();
         let daily_delay = rng.gen_range(1, daily_delay);
         println!("开始每日答题");

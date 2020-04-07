@@ -1,41 +1,20 @@
+use super::config::CFG;
 use super::db::Bank;
 use amxml::dom::new_document;
-use config::{Config, File};
+
 use regex::Regex;
 use std::collections::HashMap;
 use std::fs::read_to_string;
 use std::fs::File as StdFile;
 use std::path::Path;
 use std::process::Command;
-use std::str::FromStr;
 use std::thread;
 use std::time::Duration;
 
 lazy_static! {
-    static ref CFG: Config = {
-        let mut config = Config::default();
-        config
-            .merge(File::with_name("./config-custom.ini"))
-            .expect("加载config-custom.ini失败");
-        dbg!(&config);
-        config
-    };
-    static ref COMMON: HashMap<String, String> = {
-        let common: HashMap<_, _> = CFG
-            .get_table("common")
-            .expect("获取配置失败")
-            .iter()
-            .map(|(k, v)| (k.clone(), v.clone().into_str().unwrap()))
-            .collect();
-        common
-    };
     static ref CONFIG: HashMap<String, String> = {
-        let config: HashMap<_, _> = CFG
-            .get_table(&COMMON["device"])
-            .expect("获取配置失败")
-            .iter()
-            .map(|(k, v)| (k.clone(), v.clone().into_str().unwrap()))
-            .collect();
+        let key = &CFG.device;
+        let config: HashMap<_, _> = CFG.device_configs[key].clone();
         config
     };
     static ref FILENAME: String = {
@@ -54,16 +33,6 @@ lazy_static! {
     static ref RE_POSITION: Regex = { Regex::new(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]").unwrap() };
 }
 static ADB: &'static str = "./resource/ADB/ADB";
-pub fn config(key: &str) -> &str {
-    COMMON.get(key).expect(&format!("get key({}) failed", key))
-}
-
-pub fn get_config<T: FromStr>(key: &str) -> T {
-    match COMMON[key].parse::<T>() {
-        Ok(ok) => ok,
-        Err(_) => panic!(format!("parse key({}) failed", key)),
-    }
-}
 
 pub fn swipe(x0: usize, y0: usize, x1: usize, y1: usize, duration: usize) {
     Command::new(ADB)

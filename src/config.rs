@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use std::fs::read_to_string;
 lazy_static! {
     pub static ref CFG: Config = {
@@ -32,8 +33,8 @@ pub struct Config {
     pub article_delay: u64,
     pub star_share_comment: u64,
     pub keep_star_comment: bool,
-    pub mumu: DeviceConfig,
-    pub huawei: DeviceConfig,
+    #[serde(flatten)]
+    pub device_configs: HashMap<String, HashMap<String, String>>,
 }
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct DeviceConfig {
