@@ -17,3 +17,4 @@ serde = { version = "1", features = ["derive"] }
 rand = "*"
 libsqlite3-sys = {version = "0.17",features=["bundled"]}
 toml = "*"
+druid="*"

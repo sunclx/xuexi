@@ -9,13 +9,14 @@ mod daily;
 mod db;
 mod local;
 mod reader;
+mod ui;
 mod viewer;
 use db::{Bank, BankQuery, DB};
 use std::collections::HashMap;
 use std::env;
 
 fn main() {
-    xuexi();
+    ui::run_ui();
 }
 fn xuexi() {
     let mut current = env::current_exe().unwrap();
