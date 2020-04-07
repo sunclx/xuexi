@@ -459,6 +459,7 @@ dependencies = [
  "regex",
  "serde 1.0.105",
  "serde_json",
+ "toml",
 ]
 
 [[package]]

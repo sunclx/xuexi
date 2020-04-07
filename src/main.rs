@@ -4,6 +4,7 @@ extern crate diesel;
 extern crate lazy_static;
 mod android;
 mod challenge;
+mod config;
 mod daily;
 mod db;
 mod local;
@@ -14,6 +15,9 @@ use std::collections::HashMap;
 use std::env;
 
 fn main() {
+    xuexi();
+}
+fn xuexi() {
     let mut current = env::current_exe().unwrap();
     current.pop();
     env::set_current_dir(current).unwrap();

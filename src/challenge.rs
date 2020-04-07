@@ -1,4 +1,5 @@
 use super::android::*;
+use super::config::CFG;
 use super::db::*;
 use rand::{thread_rng, Rng};
 pub struct Challenge {
@@ -10,9 +11,9 @@ pub struct Challenge {
 }
 impl Challenge {
     pub fn new() -> Self {
-        let filename = get_config("challenge_json");
+        let filename = CFG.challenge_json.clone();
         let banks = load(&filename);
-        let database_uri = config("database_uri");
+        let database_uri = &CFG.database_uri;
         let db = DB::new(database_uri);
         Self {
             bank: Bank::new(),
@@ -24,7 +25,7 @@ impl Challenge {
     }
 
     pub fn run(&mut self) {
-        let count = get_config("challenge_count");
+        let count = CFG.challenge_count;
         println!("开始挑战答题,挑战题数：{}", count);
         return_home();
         click("rule_bottom_mine");
