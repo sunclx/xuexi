@@ -15,7 +15,7 @@ impl Viewer {
 
         for i in 0..CFG.video_count {
             let now = Instant::now();
-            println!("观看视频第{}则{}秒", i + 1, CFG.video_count);
+            println!("观看视频第{}则{}秒", i + 1, CFG.video_delay);
             sleep(CFG.video_delay);
             draw();
             println!("完成试听学习第{}则，耗时{:?}秒", i + 1, now.elapsed());

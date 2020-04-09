@@ -13,22 +13,21 @@ pub struct Challenge {
 }
 impl Challenge {
     pub fn new() -> Self {
-        let filename = CFG.challenge_json.clone();
-        let banks = load(&filename);
+        let filename = &CFG.challenge_json;
+        let banks = load(filename);
         let database_uri = &CFG.database_uri;
         let db = DB::new(database_uri);
         Self {
             bank: Bank::new(),
             db: db,
-            filename: filename,
+            filename: filename.clone(),
             has_bank: false,
             banks: banks,
         }
     }
 
     pub fn run(&mut self) {
-        let count = CFG.challenge_count;
-        println!("开始挑战答题,挑战题数：{}", count);
+        println!("开始挑战答题,挑战题数：{}", CFG.challenge_count);
         return_home();
         click("rule_bottom_mine");
         click("rule_quiz_entry");
@@ -38,7 +37,7 @@ impl Challenge {
         // 开始
         let mut i = 0;
         let mut rng = thread_rng();
-        while i < count {
+        while i < CFG.challenge_count {
             self.submit();
             let challenge_delay = rng.gen_range(1, 5);
             sleep(challenge_delay);

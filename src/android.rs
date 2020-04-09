@@ -1,7 +1,6 @@
-use super::config::CFG;
+use super::config::{XpathString, CFG};
 use super::db::Bank;
 use amxml::dom::new_document;
-
 use regex::Regex;
 use std::collections::HashMap;
 use std::fs::read_to_string;
@@ -14,14 +13,12 @@ use std::time::Duration;
 lazy_static! {
     static ref CONFIG: HashMap<String, String> = {
         let key = &CFG.device;
-        let config: HashMap<_, _> = CFG.device_configs[key].clone();
+        let config = CFG.device_configs[key].clone();
+        let bytes = toml::to_vec(&config).unwrap();
+        let config: HashMap<_, _> = toml::from_slice(&bytes).unwrap();
         config
     };
-    static ref FILENAME: String = {
-        &IME;
-        set_ime("com.android.adbkeyboard/.AdbIME");
-        CONFIG["xml_uri"].to_string()
-    };
+    static ref FILENAME: String = { CONFIG["xml_uri"].to_string() };
     pub static ref DEVICE: String = {
         let host = &CONFIG["host"];
         let port = &CONFIG["port"];
@@ -32,7 +29,12 @@ lazy_static! {
     static ref SIZE: (usize, usize) = { size() };
     static ref RE_POSITION: Regex = { Regex::new(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]").unwrap() };
 }
-static ADB: &'static str = "./resource/ADB/ADB";
+
+#[cfg(target_os = "windows")]
+static ADB: &'static str = "./resource/ADB/adb";
+
+#[cfg(not(target_os = "windows"))]
+static ADB: &'static str = "adb";
 
 pub fn swipe(x0: usize, y0: usize, x1: usize, y1: usize, duration: usize) {
     Command::new(ADB)
@@ -194,9 +196,7 @@ pub fn xpath(xpath_rule: &str) -> Vec<String> {
 }
 pub fn texts(rule: &str) -> Vec<String> {
     uiautomator();
-    // dbg!(rule);
     let xpath_rule = &CONFIG[rule];
-    // dbg!(xpath_rule);
     return xpath(xpath_rule);
 }
 
@@ -278,4 +278,40 @@ pub fn dump<P: AsRef<Path>>(path: P, banks: &Vec<Bank>) {
 
 pub fn sleep(second: u64) {
     thread::sleep(Duration::from_secs(second));
+}
+pub trait Xpath {
+    fn click(&self);
+    fn texts(&self) -> Vec<String>;
+    fn positions(&self) -> Vec<(usize, usize)>;
+}
+impl Xpath for XpathString {
+    fn texts(&self) -> Vec<String> {
+        uiautomator();
+        xpath(&self)
+    }
+    fn positions(&self) -> Vec<(usize, usize)> {
+        let mut v: Vec<(usize, usize)> = vec![];
+        for s in self.texts() {
+            let caps = RE_POSITION.captures(&s).unwrap();
+            let x0: usize = caps[1].parse().unwrap();
+            let y0: usize = caps[2].parse().unwrap();
+            let x1: usize = caps[3].parse().unwrap();
+            let y1: usize = caps[4].parse().unwrap();
+            let x = (x0 + x1) / 2;
+            let y = (y0 + y1) / 2;
+            v.push((x, y));
+        }
+        return v;
+    }
+    fn click(&self) {
+        let mut ptns = vec![];
+        for _ in 0..20 {
+            ptns = self.positions();
+            if ptns.len() == 1 {
+                break;
+            }
+        }
+        let (x, y) = ptns[0];
+        tap(x, y);
+    }
 }

@@ -8,12 +8,11 @@ impl Local {
     }
     fn enter(&self) {
         return_home();
-        let local_column_name = &CFG.local_column_name;
         for _ in 0..10 {
             let txts = texts("rule_columns_content");
             let ptns = positions("rule_columns_bounds");
             for (name, (x, y)) in txts.iter().zip(ptns.iter()) {
-                if local_column_name == name {
+                if &CFG.local_column_name == name {
                     tap(*x, *y);
                     return;
                 }
