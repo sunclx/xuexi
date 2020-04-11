@@ -1,7 +1,5 @@
-use super::android::{
-    click, content_options_positons, draw, dump, load, positions, return_home, sleep, tap,
-};
-use super::config::CFG;
+use super::android::{content_options_positons, draw, dump, load, return_home, sleep, tap, Xpath};
+use super::config::{CFG, DCFG as d};
 use super::db::*;
 use rand::{thread_rng, Rng};
 pub struct Challenge {
@@ -29,23 +27,22 @@ impl Challenge {
     pub fn run(&mut self) {
         println!("开始挑战答题,挑战题数：{}", CFG.challenge_count);
         return_home();
-        click("rule_bottom_mine");
-        click("rule_quiz_entry");
-        click("rule_challenge_entry");
-        sleep(2);
+        d.rule_bottom_mine.click();
+        d.rule_quiz_entry.click();
+        d.rule_challenge_entry.click();
 
         // 开始
         let mut i = 0;
         let mut rng = thread_rng();
         while i < CFG.challenge_count {
-            self.submit();
-            let challenge_delay = rng.gen_range(1, 5);
+            let challenge_delay = rng.gen_range(1, 2);
             sleep(challenge_delay);
-            if positions("rule_judge_bounds").len() > 0 {
+            self.submit();
+            sleep(2);
+            if d.rule_judge_bounds.positions().len() > 0 {
                 self.dump();
-                click("rule_close_bounds");
-                click("rule_again_bounds");
-                sleep(2);
+                d.rule_close_bounds.click();
+                d.rule_again_bounds.click();
                 i = 0;
                 continue;
             }
@@ -61,9 +58,9 @@ impl Challenge {
     }
     fn submit(&mut self) {
         let (content, options, mut ptns) = content_options_positons(
-            "rule_challenge_content",
-            "rule_challenge_options_content",
-            "rule_challenge_options_bounds",
+            &d.rule_challenge_content,
+            &d.rule_challenge_options_content,
+            &d.rule_challenge_options_bounds,
         );
         self.bank.clear();
         self.bank.category.push_str("单选题");
@@ -101,7 +98,7 @@ impl Challenge {
         // # 点击正确选项
         while (0, 0) == ptns[cursor] {
             draw();
-            ptns = positions("rule_challenge_options_bounds");
+            ptns = d.rule_challenge_options_bounds.positions();
         }
         // 现在可以安全点击(触摸)
         let (x, y) = ptns[cursor];

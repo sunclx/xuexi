@@ -1,8 +1,7 @@
-use super::config::{XpathString, CFG};
+use super::config::{DeviceConfig, XpathString, CFG, DCFG as d};
 use super::db::Bank;
 use amxml::dom::new_document;
 use regex::Regex;
-use std::collections::HashMap;
 use std::fs::read_to_string;
 use std::fs::File as StdFile;
 use std::path::Path;
@@ -11,17 +10,15 @@ use std::thread;
 use std::time::Duration;
 
 lazy_static! {
-    static ref CONFIG: HashMap<String, String> = {
+    static ref CONFIG: DeviceConfig = {
         let key = &CFG.device;
         let config = CFG.device_configs[key].clone();
-        let bytes = toml::to_vec(&config).unwrap();
-        let config: HashMap<_, _> = toml::from_slice(&bytes).unwrap();
         config
     };
-    static ref FILENAME: String = { CONFIG["xml_uri"].to_string() };
+    static ref FILENAME: String = { CONFIG.xml_uri.clone() };
     pub static ref DEVICE: String = {
-        let host = &CONFIG["host"];
-        let port = &CONFIG["port"];
+        let host = &CONFIG.host;
+        let port = &CONFIG.port;
         connect(host, port);
         get_devices().expect("未连接设备")
     };
@@ -38,25 +35,18 @@ static ADB: &'static str = "adb";
 
 pub fn swipe(x0: usize, y0: usize, x1: usize, y1: usize, duration: usize) {
     Command::new(ADB)
-        .args(&[
-            "shell",
-            "input",
-            "swipe",
-            &x0.to_string(),
-            &y0.to_string(),
-            &x1.to_string(),
-            &y1.to_string(),
-            &duration.to_string(),
-        ])
+        .args(
+            format!(
+                "shell input swipe {:} {:} {:} {:} {:}",
+                x0, y0, x1, y1, duration
+            )
+            .split_whitespace(),
+        )
         .output()
-        .expect(&format!(
-            "faild: ADB shell input swipe {:} {:} {:} {:} {:}",
-            x0, y0, x1, y1, duration
-        ));
-    return;
+        .expect("failed");
 }
 pub fn tap(x: usize, y: usize) {
-    swipe(x, y, x, y, 50)
+    swipe(x, y, x, y, 50);
 }
 pub fn draw() {
     let xml = xpath("//hierarchy/node/@bounds");
@@ -73,9 +63,9 @@ pub fn draw() {
 }
 pub fn back() {
     Command::new(ADB)
-        .args(&["-s", &DEVICE, "shell", "input", "keyevent", &4.to_string()])
+        .args(format!("-s {:} shell input keyevent 4", DEVICE.as_str()).split_whitespace())
         .output()
-        .expect("faild: input keyevent 4");
+        .expect("failed");
 }
 pub fn input(msg: &str) {
     Command::new(ADB)
@@ -92,57 +82,51 @@ pub fn input(msg: &str) {
             msg,
         ])
         .output()
-        .expect(&format!(
-            "faild: ADB shell am broadcast -a ADB_INPUT_TEXT --es msg {:}",
-            msg
-        ));
+        .expect("failed");
 }
 pub fn connect(host: &str, port: &str) {
     Command::new(ADB)
-        .arg("connect")
-        .arg(format!("{:}:{:}", host, port))
+        .args(format!("connect {:}:{:}", host, port).split_whitespace())
         .output()
-        .expect(&format!("ADB connect {:}:{:} failed", host, port));
+        .expect("failed");
 }
 pub fn _disconnect(host: &str, port: &str) {
     Command::new(ADB)
-        .arg("disconnect")
-        .arg(format!("{:}:{:}", host, port))
+        .args(format!("disconnect {:}:{:}", host, port).split_whitespace())
         .output()
-        .expect(&format!("ADB disconnect {:}:{:} failed", host, port));
+        .expect("failed");
 }
 pub fn set_ime(ime: &str) {
     Command::new(ADB)
-        .args(&["-s", &DEVICE, "shell", "ime", "set", ime])
+        .args(format!("-s {} shell ime set {}", DEVICE.as_str(), ime).split_whitespace())
         .output()
-        .expect(&format!("ADB shell ime set {} failde", ime));
+        .expect("failed");
 }
 
 pub fn get_ime() -> Option<String> {
     let output = Command::new(ADB)
-        .args(&["-s", &DEVICE, "shell", "ime", "list", "-s"])
+        .args(format!("-s {} shell ime list -s", DEVICE.as_str()).split_whitespace())
         .output()
         .expect("获取输入法失败");
     let output = String::from_utf8_lossy(&output.stdout);
-    output.split_whitespace().nth(0).map(|x| x.to_string())
+    let imes: Vec<_> = output.split_whitespace().collect();
+    dbg!(&imes); //.map(|x| x.to_string())
+    Some(imes[0].to_string())
 }
 
 pub fn get_devices() -> Option<String> {
-    let output = Command::new(ADB)
-        .arg("devices")
-        .output()
-        .expect("ADB devices 失败");
+    let output = Command::new(ADB).arg("devices").output().unwrap();
     let output = String::from_utf8_lossy(&output.stdout);
-    let devices: Vec<_> = output
+    output
         .lines()
         .filter(|&line| line.ends_with("\tdevice"))
         .map(|line| line.trim_end_matches("\tdevice"))
-        .collect();
-    devices.get(0).map(|x| x.to_string())
+        .next()
+        .map(ToString::to_string)
 }
 pub fn size() -> (usize, usize) {
     let output = Command::new(ADB)
-        .args(&["-s", &DEVICE, "shell", "wm", "size"])
+        .args(format!("-s {} shell wm size", DEVICE.as_str()).split_whitespace())
         .output()
         .expect("failed: ADB shell wm size");
     let res = String::from_utf8_lossy(&output.stdout);
@@ -159,26 +143,19 @@ pub fn size() -> (usize, usize) {
 }
 pub fn uiautomator() {
     Command::new(ADB)
-        .args(&[
-            "-s",
-            &DEVICE,
-            "shell",
-            "uiautomator",
-            "dump",
-            "/sdcard/ui.xml",
-        ])
+        .args(
+            format!(
+                "-s {:} shell uiautomator dump /sdcard/ui.xml",
+                DEVICE.as_str()
+            )
+            .split_whitespace(),
+        )
         .output()
-        .expect(&format!(
-            "ADB failed: ADB -s {:} shell uiautomator dump /sdcard/ui.xml",
-            DEVICE.as_str()
-        ));
+        .expect("failed");
     Command::new(ADB)
         .args(&["pull", "/sdcard/ui.xml", &FILENAME])
         .output()
-        .expect(&format!(
-            "ADB failed: ADB pull /scdcard/ui.xml {}",
-            FILENAME.as_str()
-        ));
+        .expect("failed");
 }
 pub fn xpath(xpath_rule: &str) -> Vec<String> {
     let xml = read_to_string(FILENAME.as_str()).expect("读取xml文件失败");
@@ -194,35 +171,12 @@ pub fn xpath(xpath_rule: &str) -> Vec<String> {
         .collect();
     return v;
 }
-pub fn texts(rule: &str) -> Vec<String> {
-    uiautomator();
-    let xpath_rule = &CONFIG[rule];
-    return xpath(xpath_rule);
-}
-
-pub fn positions(rule: &str) -> Vec<(usize, usize)> {
-    let mut v: Vec<(usize, usize)> = vec![];
-    for s in texts(rule) {
-        let caps = RE_POSITION.captures(&s).unwrap();
-        let x0: usize = caps[1].parse().unwrap();
-        let y0: usize = caps[2].parse().unwrap();
-        let x1: usize = caps[3].parse().unwrap();
-        let y1: usize = caps[4].parse().unwrap();
-        let x = (x0 + x1) / 2;
-        let y = (y0 + y1) / 2;
-        v.push((x, y));
-    }
-    return v;
-}
 
 pub fn content_options_positons(
     content: &str,
     options: &str,
     positions: &str,
 ) -> (String, String, Vec<(usize, usize)>) {
-    let content = &CONFIG[content];
-    let options = &CONFIG[options];
-    let positions = &CONFIG[positions];
     uiautomator();
 
     let content = xpath(content)[0].clone();
@@ -244,23 +198,12 @@ pub fn content_options_positons(
 
     return (content, options, positions);
 }
-pub fn click(rule: &str) {
-    let mut ptns = vec![];
-    for _ in 0..20 {
-        ptns = positions(rule);
-        if ptns.len() == 1 {
-            break;
-        }
-    }
-    let (x, y) = ptns[0];
-    tap(x, y);
-}
 
 pub fn return_home() {
-    let mut ptns = positions("rule_bottom_work");
+    let mut ptns = d.rule_bottom_work.positions();
     while ptns.len() < 1 {
         back();
-        ptns = positions("rule_bottom_work");
+        ptns = d.rule_bottom_work.positions();
     }
     let (x, y) = ptns[0];
     tap(x, y);

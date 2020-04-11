@@ -1,7 +1,7 @@
 use super::android::{
-    back, click, draw, input, positions, return_home, set_ime, sleep, swipe, tap, texts, IME,
+    back, draw, get_ime, input, return_home, set_ime, sleep, swipe, tap, Xpath, IME,
 };
-use super::config::CFG;
+use super::config::{CFG, DCFG as d};
 use std::time::Instant;
 
 pub struct Reader;
@@ -15,6 +15,7 @@ impl Reader {
     pub fn new() -> Self {
         &IME;
         set_ime("com.android.adbkeyboard/.AdbIME");
+        get_ime();
         Self
     }
     pub fn run(&self) {
@@ -25,8 +26,8 @@ impl Reader {
         let mut i = 1;
         let mut article_list = Vec::<String>::new();
         while i < CFG.article_count {
-            let titles = texts("rule_news_content");
-            let positions = positions("rule_news_bounds");
+            let titles = d.rule_news_content.texts();
+            let positions = d.rule_news_bounds.positions();
             for (title, (x, y)) in titles.iter().zip(positions.iter()) {
                 if article_list.iter().any(|x| x == title) {
                     continue;
@@ -50,8 +51,8 @@ impl Reader {
     fn enter(&self) {
         return_home();
         for _ in 0..10 {
-            let texts = texts("rule_columns_content");
-            let positions = positions("rule_columns_bounds");
+            let texts = d.rule_columns_content.texts();
+            let positions = d.rule_columns_bounds.positions();
             for (name, (x, y)) in texts.iter().zip(positions.iter()) {
                 if &CFG.article_column_name == name {
                     tap(*x, *y);
@@ -71,25 +72,25 @@ impl Reader {
         sleep(delay / 3);
     }
     fn star_share_comment(&self) -> u64 {
-        let p = texts("rule_comment_bounds");
+        let p = d.rule_comment_bounds.texts();
         if p.len() != 1 {
             return 0;
         }
         //  分享
-        click("rule_share_bounds");
-        click("rule_share2xuexi_bounds");
+        d.rule_share_bounds.click();
+        d.rule_share2xuexi_bounds.click();
         println!("分享一篇文章!");
         back();
 
         let msg = "不忘初心牢记使命！为实现中华民族伟大复兴的中国梦不懈奋斗！";
 
         // 留言
-        click("rule_comment_bounds");
-        click("rule_comment2_bounds");
+        d.rule_comment_bounds.click();
+        d.rule_comment2_bounds.click();
         input(msg);
         println!("留言一篇文章: {}", &msg);
 
-        click("rule_publish_bounds");
+        d.rule_publish_bounds.click();
 
         // pos_publish = self.positions('rule_publish_bounds')
         // if len(pos_publish) == 1:
@@ -101,17 +102,17 @@ impl Reader {
         //     self.tap(x, y - offset)
 
         // 收藏
-        click("rule_star_bounds");
+        d.rule_star_bounds.click();
         println!("收藏一篇文章!");
 
         // 保留评论与收藏
         if !CFG.keep_star_comment {
-            for (x, y) in positions("rule_delete_bounds") {
+            for (x, y) in d.rule_delete_bounds.positions() {
                 tap(x, y);
             }
-            click("rule_delete_confirm_bounds");
+            d.rule_delete_confirm_bounds.click();
             println!("删除评论");
-            click("rule_star_bounds");
+            d.rule_star_bounds.click();
             println!("取消收藏");
         }
         return 1;

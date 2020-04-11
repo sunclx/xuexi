@@ -1,5 +1,5 @@
-use super::android::{click, positions, return_home, sleep, swipe, tap, texts};
-use super::config::CFG;
+use super::android::{return_home, sleep, swipe, tap, Xpath};
+use super::config::{CFG, DCFG as d};
 pub struct Local;
 
 impl Local {
@@ -9,8 +9,8 @@ impl Local {
     fn enter(&self) {
         return_home();
         for _ in 0..10 {
-            let txts = texts("rule_columns_content");
-            let ptns = positions("rule_columns_bounds");
+            let txts = d.rule_columns_content.texts();
+            let ptns = d.rule_columns_bounds.positions();
             for (name, (x, y)) in txts.iter().zip(ptns.iter()) {
                 if &CFG.local_column_name == name {
                     tap(*x, *y);
@@ -25,7 +25,7 @@ impl Local {
     pub fn run(&self) {
         println!("开始本地频道");
         self.enter();
-        click("rule_local_bounds");
+        d.rule_local_bounds.click();
         sleep(10);
         println!("本地频道结束");
         return_home();

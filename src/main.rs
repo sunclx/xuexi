@@ -2,6 +2,8 @@
 extern crate diesel;
 #[macro_use]
 extern crate lazy_static;
+use serde::{Deserialize, Serialize};
+
 mod android;
 mod challenge;
 mod config;
@@ -11,7 +13,9 @@ mod local;
 mod reader;
 mod ui;
 mod viewer;
+use android::Xpath;
 use calamine as _;
+use config::DCFG as d;
 use db::{Bank, BankQuery, DB};
 use std::collections::HashMap;
 use std::env;
@@ -19,6 +23,7 @@ fn main() {
     ui::run_ui();
 }
 fn xuexi(args: ui::ArgsState) {
+    // #[feature("release")]
     // let mut current = env::current_exe().unwrap();
     // current.pop();
     // env::set_current_dir(current).unwrap();
@@ -30,13 +35,13 @@ fn xuexi(args: ui::ArgsState) {
     if args.auto {
         println!("获取学习积分情况");
         android::return_home();
-        android::click("rule_bottom_mine");
-        android::click("rule_bonus_entry");
+        d.rule_bottom_mine.click();
+        d.rule_bonus_entry.click();
 
         let mut bonus = HashMap::new();
         while bonus.len() == 0 {
-            let titles = android::texts("rule_bonus_title");
-            let scores = android::texts("rule_bonus_score");
+            let titles = d.rule_bonus_title.texts();
+            let scores = d.rule_bonus_score.texts();
             bonus = titles.into_iter().zip(scores.into_iter()).collect();
         }
         dbg!(&bonus);
@@ -120,15 +125,26 @@ fn _same() {
 }
 
 fn _add() {
-    let db1 = DB::new("./resource/data-dev.sqlite");
-    let banks1 = db1._query_content("%");
+    // let db1 = DB::new("./resource/data-dev.sqlite");
+    // let mut banks1 = db1._query_content("%");
+    let mut banks1 = load("./resource/questions.json");
+    let db2 = DB::new("./resource/data.sqlite");
+    let mut banks2 = db2._query_content("%");
 
-    let mut banks2 = _banks_from_json("./resource/same.json");
-    for bank in &mut banks2 {
+    for bank in &mut banks1 {
         bank.content = bank.content.replace('\u{a0}', " ");
-        if !banks1.contains(bank) {
-            let bank = &bank.clone();
-            db1.add(&bank.into());
+        bank.answer = bank.answer.replace('\u{a0}', " ");
+        bank.answer = bank.answer.replace(" ", "");
+        if bank.category == "填空题" {
+            bank.options = bank.answer.chars().count().to_string();
+        }
+        let bank = bank.clone();
+        if bank.answer == "" || bank.content == "" || bank.options == "" {
+            continue;
+        }
+        if !banks2.contains(&bank) {
+            db2.add(&(&bank).into());
+            banks2.push(bank);
         }
     }
 }
@@ -138,4 +154,29 @@ fn _banks_from_db(path: &str) -> Vec<Bank> {
 }
 fn _banks_from_json(path: &str) -> Vec<Bank> {
     android::load(path)
+}
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Bank1 {
+    #[serde(skip)]
+    pub id: i32,
+    pub category: String,
+    pub content: String,
+    pub options: Vec<String>,
+    pub answer: String,
+    pub notes: String,
+}
+pub fn load(path: &str) -> Vec<Bank> {
+    let s = std::fs::read_to_string(path).unwrap();
+    let v: Vec<Bank1> = serde_json::from_str(&s).unwrap();
+    v.into_iter()
+        .map(|bank| {
+            let mut b = Bank::new();
+            b.category = bank.category;
+            b.content = bank.content;
+            b.options = bank.options.join("|");
+            b.answer = bank.answer;
+            b.notes = bank.notes;
+            b
+        })
+        .collect()
 }

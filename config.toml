@@ -1,8 +1,8 @@
 # 设备名称 指明连接的安卓设备, 需要同名[section]
-device = 'huawei'
+device = 'mumu'
 # 数据库URI
 # 目前仅使用database_uri， 另两个是担心以后每日答题和挑战答题出现同一题造成bug，只要将三个配置成一样即可
-database_uri = './resource/data-dev.sqlite'
+database_uri = './resource/data.sqlite'
 database_json = './resource/questions.json'
 db_wrong_json = './resource/db_wrong.json'
 
@@ -17,7 +17,7 @@ daily_forever = true
 # 每日答题每组时间间隔 之前有发生过10秒内开始下一组不得分的情况，后来又没了，所以把这个时间间隔写活
 daily_delay = 3
 # 挑战答题题数， 积分设为10+， 积点点通设为30+
-challenge_count = 30
+challenge_count = 200
 # 挑战答题时延， 设0-5， 0表示随机
 challenge_delay = 0
 
@@ -102,13 +102,13 @@ rule_bonus_score = '//node[@class="android.widget.ListView"]/node/node[4]/@conte
 rule_type = '//node[@content-desc="1 /10" or @content-desc="2 /10" or @content-desc="3 /10" or @content-desc="4 /10" or @content-desc="5 /10" or @content-desc="6 /10" or @content-desc="7 /10" or @content-desc="8 /10" or @content-desc="9 /10"  or @content-desc="10 /10"]/preceding-sibling::node[1]/@content-desc'
 # 题干
 rule_content = '//node[@class="android.widget.ListView"]/../node[@index="2"]/@content-desc'
-rule_blank_content = '//node[@class="android.widget.EditText"]/../../node[@class="android.view.View"]/@content-desc'
+rule_blank_content = '//node[@class="android.widget.EditText"]/../node[@class="android.view.View"]/@content-desc'
 #//node[@content-desc="1 /10" or @content-desc="2 /10" or @content-desc="3 /10" or @content-desc="4 /10" or @content-desc="5 /10" or @content-desc="6 /10" or @content-desc="7 /10" or @content-desc="8 /10" or @content-desc="9 /10"  or @content-desc="10 /10"]/following-sibling::node[1]/node/node[@class="android.view.View"]/@content-desc
 # 选项坐标
 rule_options = '//node[@class="android.widget.ListView"]/node/@bounds'
 rule_radio_options_content =  '//node[@class="android.widget.ListView"]/node//node[@index="2" and @class="android.view.View"]/@content-desc'
 # 填空题输入框坐标
-rule_edits = '//node[@class="android.widget.EditText"]/following-sibling::node/@bounds'
+rule_edits = '//node[@class="android.widget.EditText"]/following-sibling::node[@content-desc=""]/@bounds'
 # 分数
 rule_score = '//node[@content-desc="积分： "]/following-sibling::node[1]/@content-desc'
 rule_score_reached = '//node[@content-desc="领取奖励已达今日上限"]/@content-desc'

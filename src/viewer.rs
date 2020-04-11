@@ -1,5 +1,5 @@
-use super::android::{back, click, draw, return_home, sleep};
-use super::config::CFG;
+use super::android::{back, draw, return_home, sleep, Xpath};
+use super::config::{CFG, DCFG as d};
 use std::time::Instant;
 pub struct Viewer;
 impl Viewer {
@@ -9,9 +9,9 @@ impl Viewer {
     pub fn run(&self) {
         println!("开始试听学习");
         return_home();
-        click("rule_bottom_work");
-        click("rule_bottom_ding");
-        click("rule_first_video");
+        d.rule_bottom_work.click();
+        d.rule_bottom_ding.click();
+        d.rule_first_video.click();
 
         for i in 0..CFG.video_count {
             let now = Instant::now();

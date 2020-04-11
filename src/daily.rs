@@ -1,8 +1,7 @@
 use super::android::{
-    click, content_options_positons, draw, input, positions, return_home, set_ime, sleep, tap,
-    texts, Xpath, IME,
+    content_options_positons, draw, input, return_home, set_ime, sleep, tap, Xpath, IME,
 };
-use super::config::{CFG, DCFG};
+use super::config::{CFG, DCFG as d};
 use super::db::*;
 use rand::{thread_rng, Rng};
 pub struct Daily {
@@ -32,12 +31,9 @@ impl Daily {
 
     pub fn enter(&self) {
         return_home();
-        DCFG.rule_bottom_mine.click();
-        DCFG.rule_quiz_entry.click();
-        DCFG.rule_daily_entry.click();
-        //click("rule_bottom_mine");
-        // click("rule_quiz_entry");
-        // click("rule_daily_entry");
+        d.rule_bottom_mine.click();
+        d.rule_quiz_entry.click();
+        d.rule_daily_entry.click();
     }
     pub fn run(&mut self) {
         // # 每日答题，每组题数
@@ -52,21 +48,21 @@ impl Daily {
             for _ in 0..count {
                 self.submit();
             }
-            if !CFG.daily_forever && texts("rule_score_reached").len() > 0 {
+            if !CFG.daily_forever && d.rule_score_reached.texts().len() > 0 {
                 println!("大战{}回合，终于分数达标咯，告辞！", group);
                 return_home();
                 return;
             }
             println!("再来一组");
             sleep(daily_delay);
-            click("rule_next");
+            d.rule_next.click();
             group += 1
         }
     }
     fn submit(&mut self) {
         self.has_bank = false;
         self.bank.clear();
-        self.bank.category.push_str(&texts("rule_type")[0]);
+        self.bank.category.push_str(&d.rule_type.texts()[0]);
         match self.bank.category.as_str() {
             "填空题" => self.blank(),
             "单选题" => self.radio(),
@@ -84,7 +80,7 @@ impl Daily {
                     if submit_position.len() > 0 {
                         break;
                     }
-                    submit_position = positions("rule_submit");
+                    submit_position = d.rule_submit.positions();
                 }
                 if submit_position.len() < 1 {
                     (0, 0)
@@ -95,18 +91,18 @@ impl Daily {
         }
 
         match (SPOSITION.0, SPOSITION.1) {
-            (0, 0) => click("rule_submit"),
+            (0, 0) => d.rule_submit.click(),
             (x, y) => tap(x, y),
         }
         // # 填好空格或选中选项后
         // 提交答案后，获取答案解析，若为空，则回答正确，否则，返回正确答案
-        match &*texts("rule_desc") {
+        match &*d.rule_desc.texts() {
             [des, ..] => {
                 self.bank.answer = des.replace(r"正确答案：", "");
                 println!("正确答案：{}", &self.bank.answer);
-                self.bank.notes.push_str(&texts("rule_note")[0]);
+                self.bank.notes.push_str(&d.rule_note.texts()[0]);
                 match (SPOSITION.0, SPOSITION.1) {
-                    (0, 0) => click("rule_submit"),
+                    (0, 0) => d.rule_submit.click(),
                     (x, y) => tap(x, y),
                 }
                 // 删除错误数据
@@ -127,9 +123,9 @@ impl Daily {
         }
     }
     fn blank(&mut self) {
-        let contents = texts("rule_blank_content");
+        let contents = d.rule_blank_content.texts();
         self.bank.content = contents.join("");
-        let edits = positions("rule_edits");
+        let edits = d.rule_edits.positions();
         let count_blank = edits.len();
         self.bank.options = count_blank.to_string();
         match &*self.db.query(&self.bank) {
@@ -156,8 +152,11 @@ impl Daily {
         }
     }
     fn radio(&mut self) {
-        let (content, options, mut ptns) =
-            content_options_positons("rule_content", "rule_radio_options_content", "rule_options");
+        let (content, options, mut ptns) = content_options_positons(
+            &d.rule_content,
+            &d.rule_radio_options_content,
+            &d.rule_options,
+        );
         self.bank.content = content;
         self.bank.options = options;
         match &*self.db.query(&self.bank) {
@@ -178,7 +177,7 @@ impl Daily {
         match ptns[cursor] {
             (0, 0) => {
                 draw();
-                ptns = positions("rule_options");
+                ptns = d.rule_options.positions();
                 let (x, y) = ptns[cursor];
                 tap(x, y);
             }
@@ -186,8 +185,11 @@ impl Daily {
         }
     }
     fn check(&mut self) {
-        let (content, options, mut ptns) =
-            content_options_positons("rule_content", "rule_radio_options_content", "rule_options");
+        let (content, options, mut ptns) = content_options_positons(
+            &d.rule_content,
+            &d.rule_radio_options_content,
+            &d.rule_options,
+        );
         self.bank.content = content;
         self.bank.options = options;
         let answers: String;
@@ -212,7 +214,7 @@ impl Daily {
             match ptns[cursor] {
                 (0, 0) => {
                     draw();
-                    ptns = positions("rule_options");
+                    ptns = d.rule_options.positions();
                     let (x, y) = ptns[cursor];
                     tap(x, y);
                 }
