@@ -2,7 +2,40 @@ use super::android::{
     back, draw, get_ime, input, return_home, set_ime, sleep, swipe, tap, Xpath, IME,
 };
 use super::config::{CFG, DCFG as d};
+use rand::Rng;
+use serde::{Deserialize, Serialize};
 use std::time::Instant;
+lazy_static! {
+    static ref COMMENTS: Vec<Comment> = {
+        let comments_str = include_str!("../resource/comments.json");
+        let comments: Vec<Comment> = serde_json::from_str(comments_str).unwrap();
+        comments
+    };
+}
+#[derive(Debug, Serialize, Deserialize, Clone)]
+struct Comment {
+    id: u64,
+    tags: Vec<String>,
+    content: Vec<String>,
+}
+fn get_comment(name: &str) -> String {
+    let msg = "不忘初心牢记使命！为实现中华民族伟大复兴的中国梦不懈奋斗！";
+    let mut rng = rand::thread_rng();
+    for comment in COMMENTS.iter() {
+        for tag in &comment.tags {
+            if name.contains(tag) {
+                let i = rng.gen_range(0, comment.content.len());
+                let mut c = comment.content[i].clone();
+                c.push_str("。为实现中华民族伟大复兴的中国梦不懈奋斗！");
+                return c;
+            }
+        }
+    }
+    let i = rng.gen_range(0, COMMENTS[0].content.len());
+    let mut c = COMMENTS[0].content[i].clone();
+    c.push_str("为实现中华民族伟大复兴的中国梦不懈奋斗！");
+    return c;
+}
 
 pub struct Reader;
 impl Drop for Reader {
@@ -38,7 +71,7 @@ impl Reader {
                 article_list.push(title.to_string());
                 self.read_new(CFG.article_delay);
                 if ssc > 0 {
-                    ssc -= self.star_share_comment();
+                    ssc -= self.star_share_comment(title);
                 }
                 back();
                 println!("新闻[{}]已阅，耗时{:?}", i, now.elapsed());
@@ -71,7 +104,7 @@ impl Reader {
         draw();
         sleep(delay / 3);
     }
-    fn star_share_comment(&self) -> u64 {
+    fn star_share_comment(&self, title: &str) -> u64 {
         let p = d.rule_comment_bounds.texts();
         if p.len() != 1 {
             return 0;
@@ -82,12 +115,13 @@ impl Reader {
         println!("分享一篇文章!");
         back();
 
-        let msg = "不忘初心牢记使命！为实现中华民族伟大复兴的中国梦不懈奋斗！";
+        //let msg = "不忘初心牢记使命！为实现中华民族伟大复兴的中国梦不懈奋斗！";
+        let msg = get_comment(title);
 
         // 留言
         d.rule_comment_bounds.click();
         d.rule_comment2_bounds.click();
-        input(msg);
+        input(&msg);
         println!("留言一篇文章: {}", &msg);
 
         d.rule_publish_bounds.click();

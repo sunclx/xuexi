@@ -4,6 +4,7 @@ use super::android::{
 use super::config::{CFG, DCFG as d};
 use super::db::*;
 use rand::{thread_rng, Rng};
+
 pub struct Daily {
     db: DB,
     bank: Bank,
