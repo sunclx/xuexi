@@ -19,22 +19,20 @@ struct Comment {
     content: Vec<String>,
 }
 fn get_comment(name: &str) -> String {
-    let msg = "不忘初心牢记使命！为实现中华民族伟大复兴的中国梦不懈奋斗！";
+    //let msg = "不忘初心牢记使命！为实现中华民族伟大复兴的中国梦不懈奋斗！";
     let mut rng = rand::thread_rng();
     for comment in COMMENTS.iter() {
         for tag in &comment.tags {
             if name.contains(tag) {
                 let i = rng.gen_range(0, comment.content.len());
-                let mut c = comment.content[i].clone();
-                c.push_str("。为实现中华民族伟大复兴的中国梦不懈奋斗！");
-                return c;
+                let i2 = rng.gen_range(0, comment.content.len());
+                return comment.content[i].clone() + &comment.content[i2];
             }
         }
     }
     let i = rng.gen_range(0, COMMENTS[0].content.len());
-    let mut c = COMMENTS[0].content[i].clone();
-    c.push_str("为实现中华民族伟大复兴的中国梦不懈奋斗！");
-    return c;
+    let i2 = rng.gen_range(0, COMMENTS[0].content.len());
+    return COMMENTS[0].content[i].clone() + &COMMENTS[0].content[i2];
 }
 
 pub struct Reader;

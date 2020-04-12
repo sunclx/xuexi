@@ -24,9 +24,9 @@ fn main() {
 }
 fn xuexi(args: ui::ArgsState) {
     // #[feature("release")]
-    // let mut current = env::current_exe().unwrap();
-    // current.pop();
-    // env::set_current_dir(current).unwrap();
+    let mut current = env::current_exe().unwrap();
+    current.pop();
+    env::set_current_dir(current).unwrap();
     let mut args = args;
 
     println!("当前工作目录{:?}", env::current_dir());
