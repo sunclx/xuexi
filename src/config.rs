@@ -100,4 +100,5 @@ pub struct DeviceConfig {
     pub rule_delete_bounds: XpathString,
     pub rule_delete_confirm_bounds: XpathString,
     pub rule_comment2_bounds: XpathString,
+    pub rule_exit: XpathString,
 }

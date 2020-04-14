@@ -37,6 +37,7 @@ impl Challenge {
         while i < CFG.challenge_count {
             let challenge_delay = rng.gen_range(1, 2);
             sleep(challenge_delay);
+            print!("第{}题", i);
             self.submit();
             sleep(2);
             if d.rule_judge_bounds.positions().len() > 0 {

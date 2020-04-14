@@ -11,6 +11,7 @@ pub struct ArgsState {
     pub video: bool,
     pub challenge: bool,
     pub daily: bool,
+    start: bool,
 }
 
 fn build_ui() -> impl Widget<ArgsState> {
@@ -30,9 +31,9 @@ fn build_ui() -> impl Widget<ArgsState> {
                 .cross_axis_alignment(CrossAxisAlignment::Start)
                 .with_child(Checkbox::new("本地频道").lens(ArgsState::local))
                 .with_spacer(10.)
-                .with_child(Checkbox::new("阅读文章").lens(ArgsState::article))
-                .with_spacer(10.)
                 .with_child(Checkbox::new("视听学习").lens(ArgsState::video))
+                .with_spacer(10.)
+                .with_child(Checkbox::new("阅读文章").lens(ArgsState::article))
                 .with_spacer(10.)
                 .with_child(Checkbox::new("挑战答题").lens(ArgsState::challenge))
                 .with_spacer(10.)
@@ -44,8 +45,11 @@ fn build_ui() -> impl Widget<ArgsState> {
             Flex::row()
                 .with_child(
                     Button::new("开始").on_click(|_ctx, data: &mut ArgsState, _env| {
-                        let data = data.clone();
-                        thread::spawn(move || super::xuexi(data.clone()));
+                        if !data.start {
+                            data.start = true;
+                            let data = data.clone();
+                            thread::spawn(move || super::xuexi(data.clone()));
+                        }
                     }),
                 )
                 .with_spacer(10.)
@@ -66,6 +70,7 @@ pub fn run_ui() {
         video: true,
         challenge: true,
         daily: true,
+        start: false,
     };
     // describe the main window
     let main_window = WindowDesc::new(build_ui)

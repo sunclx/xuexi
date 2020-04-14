@@ -1,5 +1,5 @@
 use super::android::{
-    content_options_positons, draw, input, return_home, set_ime, sleep, tap, Xpath, IME,
+    back, content_options_positons, draw, input, return_home, set_ime, sleep, tap, Xpath, IME,
 };
 use super::config::{CFG, DCFG as d};
 use super::db::*;
@@ -47,7 +47,12 @@ impl Daily {
         loop {
             println!("\n<----正在答题,第 {} 组---->", group);
             for _ in 0..count {
-                self.submit();
+                if let Err(_) = self.submit() {
+                    back();
+                    d.rule_exit.click();
+                    d.rule_daily_entry.click();
+                    break;
+                }
             }
             if !CFG.daily_forever && d.rule_score_reached.texts().len() > 0 {
                 println!("大战{}回合，终于分数达标咯，告辞！", group);
@@ -60,7 +65,7 @@ impl Daily {
             group += 1
         }
     }
-    fn submit(&mut self) {
+    fn submit(&mut self) -> Result<(), ()> {
         self.has_bank = false;
         self.bank.clear();
         self.bank.category.push_str(&d.rule_type.texts()[0]);
@@ -73,25 +78,29 @@ impl Daily {
                 panic!("未知题目类型")
             }
         }
-        lazy_static! {
-            static ref SPOSITION: (usize, usize) = {
-                let mut submit_position = vec![];
+        // lazy_static! {
+        //     static ref SPOSITION: (usize, usize) = {
+        //         let mut submit_position = vec![];
 
-                for _ in 0..10 {
-                    if submit_position.len() > 0 {
-                        break;
-                    }
-                    submit_position = d.rule_submit.positions();
-                }
-                if submit_position.len() < 1 {
-                    (0, 0)
-                } else {
-                    submit_position[0]
-                }
-            };
+        //         for _ in 0..10 {
+        //             if submit_position.len() > 0 {
+        //                 break;
+        //             }
+        //             submit_position = d.rule_submit.positions();
+        //         }
+        //         if submit_position.len() < 1 {
+        //             (0, 0)
+        //         } else {
+        //             submit_position[0]
+        //         }
+        //     };
+        // }
+        let submit_position = d.rule_submit.positions();
+        if submit_position.len() != 1 {
+            return Err(());
         }
 
-        match (SPOSITION.0, SPOSITION.1) {
+        match submit_position[0] {
             (0, 0) => d.rule_submit.click(),
             (x, y) => tap(x, y),
         }
@@ -102,7 +111,7 @@ impl Daily {
                 self.bank.answer = des.replace(r"正确答案：", "");
                 println!("正确答案：{}", &self.bank.answer);
                 self.bank.notes.push_str(&d.rule_note.texts()[0]);
-                match (SPOSITION.0, SPOSITION.1) {
+                match submit_position[0] {
                     (0, 0) => d.rule_submit.click(),
                     (x, y) => tap(x, y),
                 }
@@ -122,6 +131,7 @@ impl Daily {
                 }
             }
         }
+        Ok(())
     }
     fn blank(&mut self) {
         let contents = d.rule_blank_content.texts();

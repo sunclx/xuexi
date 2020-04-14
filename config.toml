@@ -122,6 +122,7 @@ rule_back = '//node[@class="android.widget.Button"]/../preceding-sibling::node[1
 rule_submit = '//node[@content-desc="确定" or @content-desc="下一题" or @content-desc="完成"]/@bounds'
 rule_return ='//node[@content-desc="返回"]/@bounds'
 rule_next ='//node[@content-desc="再来一组"]/@bounds'
+rule_exit = '//node[@content-desc="退出" or text="退出"]/@bounds'
 # ==============================================================================================================
 # 挑战答题xpath规则
 # 题型：挑战题
@@ -221,6 +222,7 @@ rule_back ='//node[@class="android.widget.Button"]/../preceding-sibling::node[1]
 rule_submit ='//node[@content-desc="确定" or @content-desc="下一题" or @content-desc="完成"]/@bounds'
 rule_return ='//node[@content-desc="返回"]/@bounds'
 rule_next ='//node[@content-desc="再来一组"]/@bounds'
+rule_exit = '//node[@content-desc="退出" or text="退出"]/@bounds'
 # ==============================================================================================================
 # 挑战答题xpath规则
 # 题型：挑战题
