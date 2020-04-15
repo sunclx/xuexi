@@ -1,14 +1,22 @@
 use serde::{Deserialize, Serialize};
+// use std::cell::Cell;
 use std::collections::HashMap;
 use std::fs::read_to_string;
+use std::sync::{Arc, Mutex};
+
 lazy_static! {
     pub static ref CFG: Config = {
         let s = read_to_string("./config.toml").unwrap();
         let c: Config = toml::from_str(&s).unwrap();
         c
     };
+    pub static ref KEY: Arc<Mutex<bool>> = { Arc::new(Mutex::new(false)) };
     pub static ref DCFG: DeviceConfig = {
-        let key = &CFG.device;
+        let key;
+        match KEY.clone().lock().unwrap().deref() {
+            &true => key = "mumu",
+            &false => key = "huawei",
+        }
         let config = CFG.device_configs[key].clone();
         config
     };

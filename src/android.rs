@@ -1,4 +1,4 @@
-use super::config::{DeviceConfig, XpathString, CFG, DCFG as d};
+use super::config::{XpathString, DCFG as d};
 use super::db::Bank;
 use amxml::dom::new_document;
 use regex::Regex;
@@ -10,15 +10,10 @@ use std::thread;
 use std::time::Duration;
 
 lazy_static! {
-    static ref CONFIG: DeviceConfig = {
-        let key = &CFG.device;
-        let config = CFG.device_configs[key].clone();
-        config
-    };
-    static ref FILENAME: String = { CONFIG.xml_uri.clone() };
+    static ref FILENAME: String = { d.xml_uri.clone() };
     pub static ref DEVICE: String = {
-        let host = &CONFIG.host;
-        let port = &CONFIG.port;
+        let host = &d.host;
+        let port = &d.port;
         connect(host, port);
         get_devices().expect("未连接设备")
     };

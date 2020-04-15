@@ -1,5 +1,5 @@
 # 设备名称 指明连接的安卓设备, 需要同名[section]
-device = 'mumu'
+device = 'huawei'
 # 数据库URI
 # 目前仅使用database_uri， 另两个是担心以后每日答题和挑战答题出现同一题造成bug，只要将三个配置成一样即可
 database_uri = './resource/data.sqlite'

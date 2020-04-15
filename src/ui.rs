@@ -1,6 +1,8 @@
+use super::config::KEY;
 use druid::widget::prelude::*;
 use druid::widget::{Button, Checkbox, CrossAxisAlignment, Either, Flex, Label, Switch, WidgetExt};
 use druid::{AppLauncher, Data, Key, Lens, LocalizedString, WindowDesc};
+use std::sync::Arc;
 use std::thread;
 
 #[derive(Clone, Data, Lens)]
@@ -12,11 +14,17 @@ pub struct ArgsState {
     pub challenge: bool,
     pub daily: bool,
     start: bool,
+    mumu: bool,
 }
 
 fn build_ui() -> impl Widget<ArgsState> {
     Flex::column()
-        .with_child(Label::new("设置：     "))
+        .with_child(
+            Flex::row()
+                .with_child(Label::new("设置：     "))
+                .with_child(Checkbox::new("mumu").lens(ArgsState::mumu))
+                .padding(5.0),
+        )
         .with_child(
             Flex::row()
                 .with_child(Label::new("自动获取"))
@@ -45,6 +53,11 @@ fn build_ui() -> impl Widget<ArgsState> {
             Flex::row()
                 .with_child(
                     Button::new("开始").on_click(|_ctx, data: &mut ArgsState, _env| {
+                        if data.mumu {
+                            let key = Arc::clone(&KEY);
+                            let mut b = key.lock().unwrap();
+                            *b = true;
+                        }
                         if !data.start {
                             data.start = true;
                             let data = data.clone();
@@ -71,6 +84,7 @@ pub fn run_ui() {
         challenge: true,
         daily: true,
         start: false,
+        mumu: false,
     };
     // describe the main window
     let main_window = WindowDesc::new(build_ui)
