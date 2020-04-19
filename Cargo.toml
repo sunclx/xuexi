@@ -17,4 +17,3 @@ rand = "*"
 libsqlite3-sys = {version = "0.17",features=["bundled"]}
 toml = "*"
 druid="*"
-calamine= "*"

@@ -14,21 +14,11 @@ mod reader;
 mod ui;
 mod viewer;
 use android::Xpath;
-//use calamine as _;
 use config::DCFG as d;
-use config::OUT;
-use db::{Bank, BankQuery, DB};
+use db::{Bank, DB};
 use std::collections::HashMap;
 use std::env;
 fn main() {
-    xprintln!("{}", "ceshi");
-    xprintln!("{}", "ceshi");
-
-    // {
-    //     let clone = OUT.clone();
-    //     let io = clone.lock().unwrap();
-    //     print!("{}", *io);
-    // }
     ui::run_ui();
 }
 fn xuexi(args: ui::ArgsState) {
@@ -87,8 +77,7 @@ fn _delete() {
     let db = DB::new(database_uri);
     let banks = android::load("./resource/same.json");
     for bank in &banks {
-        let bq = BankQuery::from(bank);
-        db.delete(&bq);
+        db.delete(bank);
     }
 }
 fn _query() {
