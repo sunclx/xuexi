@@ -54,6 +54,17 @@ impl<'a> From<&'a Bank> for BankQuery<'a> {
         }
     }
 }
+impl<'a> From<&'a BankQuery<'a>> for BankQuery<'a> {
+    fn from(bank: &'a BankQuery<'a>) -> Self {
+        BankQuery {
+            category: bank.category,
+            content: bank.content,
+            options: bank.options,
+            answer: bank.answer,
+            notes: bank.notes,
+        }
+    }
+}
 
 #[derive(Insertable, Debug, Serialize, Deserialize, Clone)]
 #[table_name = "banks"]
@@ -128,17 +139,19 @@ impl DB {
             .load::<Bank>(&self.connection)
             .expect(&format!("查询答题失败。Bank:{:?}", &cnt))
     }
-    pub fn add(&self, bankq: &BankQuery) {
+    pub fn add<'a, T: Into<BankQuery<'a>>>(&self, bankq: T) {
+        let bankq = bankq.into();
         if bankq.content.trim() == "" {
             return;
         }
         diesel::insert_into(banks)
-            .values(bankq)
+            .values(&bankq)
             .execute(&self.connection)
             .expect(&format!("添加答题失败。{:?}", &bankq));
         println!("添加到数据库成功");
     }
-    pub fn delete(&self, bankq: &BankQuery) {
+    pub fn delete<'a, T: Into<BankQuery<'a>>>(&self, bankq: T) {
+        let bankq = bankq.into();
         if bankq.content.trim() == "" {
             return;
         }
@@ -160,7 +173,8 @@ impl DB {
         }
         // .expect(&format!("删除答题失败。BankQuery:{:?}", &bankq));
     }
-    pub fn _update(&self, bankq: &BankQuery) {
+    pub fn _update<'a, T: Into<BankQuery<'a>>>(&self, bankq: T) {
+        let bankq = bankq.into();
         let c = RE.replace_all(bankq.content, "%");
         let target = banks
             .filter(category.eq(bankq.category))

@@ -9,6 +9,7 @@ pub struct Daily {
     db: DB,
     bank: Bank,
     has_bank: bool,
+    submit_position: Option<(usize, usize)>,
 }
 impl Drop for Daily {
     fn drop(&mut self) {
@@ -27,6 +28,7 @@ impl Daily {
             bank: Bank::new(),
             db: db,
             has_bank: false,
+            submit_position: None,
         }
     }
 
@@ -44,14 +46,14 @@ impl Daily {
         println!("开始每日答题");
         self.enter();
         let mut group = 1;
-        loop {
+        'out: loop {
             println!("\n<----正在答题,第 {} 组---->", group);
             for _ in 0..count {
                 if let Err(_) = self.submit() {
                     back();
                     d.rule_exit.click();
                     d.rule_daily_entry.click();
-                    break;
+                    continue 'out;
                 }
             }
             if !CFG.daily_forever && d.rule_score_reached.texts().len() > 0 {
@@ -78,32 +80,19 @@ impl Daily {
                 panic!("未知题目类型")
             }
         }
-        // lazy_static! {
-        //     static ref SPOSITION: (usize, usize) = {
-        //         let mut submit_position = vec![];
 
-        //         for _ in 0..10 {
-        //             if submit_position.len() > 0 {
-        //                 break;
-        //             }
-        //             submit_position = d.rule_submit.positions();
-        //         }
-        //         if submit_position.len() < 1 {
-        //             (0, 0)
-        //         } else {
-        //             submit_position[0]
-        //         }
-        //     };
-        // }
-        let submit_position = d.rule_submit.positions();
-        if submit_position.len() != 1 {
-            return Err(());
+        if let Some((x, y)) = self.submit_position {
+            tap(x, y);
+        } else {
+            let submit_position = d.rule_submit.positions();
+            if submit_position.len() != 1 {
+                return Err(());
+            }
+            let (x, y) = submit_position[0];
+            self.submit_position = Some((x, y));
+            tap(x, y);
         }
 
-        match submit_position[0] {
-            (0, 0) => d.rule_submit.click(),
-            (x, y) => tap(x, y),
-        }
         // # 填好空格或选中选项后
         // 提交答案后，获取答案解析，若为空，则回答正确，否则，返回正确答案
         match &*d.rule_desc.texts() {
@@ -111,23 +100,21 @@ impl Daily {
                 self.bank.answer = des.replace(r"正确答案：", "");
                 println!("正确答案：{}", &self.bank.answer);
                 self.bank.notes.push_str(&d.rule_note.texts()[0]);
-                match submit_position[0] {
-                    (0, 0) => d.rule_submit.click(),
-                    (x, y) => tap(x, y),
-                }
+                let (x, y) = self.submit_position.unwrap();
+                tap(x, y);
                 // 删除错误数据
                 if self.has_bank {
-                    self.db.delete(&(&self.bank).into());
-                    self.db.add(&(&self.bank).into());
+                    self.db.delete(&self.bank);
+                    self.db.add(&self.bank);
                 } else {
-                    self.db.add(&(&self.bank).into());
+                    self.db.add(&self.bank);
                 }
             }
             [] => {
                 println!("回答正确");
                 // #保存数据
                 if !self.has_bank {
-                    self.db.add(&(&self.bank).into());
+                    self.db.add(&self.bank);
                 }
             }
         }

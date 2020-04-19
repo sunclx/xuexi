@@ -1,4 +1,5 @@
 use super::config::KEY;
+use super::config::OUT;
 use druid::widget::prelude::*;
 use druid::widget::{Button, Checkbox, CrossAxisAlignment, Either, Flex, Label, Switch, WidgetExt};
 use druid::{AppLauncher, Data, Key, Lens, LocalizedString, WindowDesc};
@@ -21,7 +22,12 @@ fn build_ui() -> impl Widget<ArgsState> {
     Flex::column()
         .with_child(
             Flex::row()
-                .with_child(Label::new("设置：     "))
+                .with_child(Label::new(|_: &_, _: &_| {
+                    let clone = OUT.clone();
+                    let io = clone.lock().unwrap();
+                    let out = io.to_string();
+                    out
+                }))
                 .with_child(Checkbox::new("mumu").lens(ArgsState::mumu))
                 .padding(5.0),
         )
