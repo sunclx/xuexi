@@ -14,12 +14,21 @@ mod reader;
 mod ui;
 mod viewer;
 use android::Xpath;
-use calamine as _;
+//use calamine as _;
 use config::DCFG as d;
+use config::OUT;
 use db::{Bank, BankQuery, DB};
 use std::collections::HashMap;
 use std::env;
 fn main() {
+    xprintln!("{}", "ceshi");
+    xprintln!("{}", "ceshi");
+
+    // {
+    //     let clone = OUT.clone();
+    //     let io = clone.lock().unwrap();
+    //     print!("{}", *io);
+    // }
     ui::run_ui();
 }
 fn xuexi(args: ui::ArgsState) {
@@ -143,7 +152,7 @@ fn _add() {
             continue;
         }
         if !banks2.contains(&bank) {
-            db2.add(&(&bank).into());
+            db2.add(&bank);
             banks2.push(bank);
         }
     }
