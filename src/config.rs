@@ -11,15 +11,12 @@ lazy_static! {
         let c: Config = toml::from_str(&s).unwrap();
         c
     };
-    pub static ref KEY: Arc<Mutex<bool>> = { Arc::new(Mutex::new(false)) };
+    pub static ref KEY: Arc<Mutex<String>> = { Arc::new(Mutex::new(String::from("mumu"))) };
     pub static ref OUT: Arc<Mutex<String>> = Arc::new(Mutex::new(String::with_capacity(1024)));
     pub static ref DCFG: DeviceConfig = {
-        let key;
-        match KEY.clone().lock().unwrap().deref() {
-            &true => key = "mumu",
-            &false => key = "huawei",
-        }
-        let config = CFG.device_configs[key].clone();
+        let clone = KEY.clone();
+        let key = clone.lock().unwrap();
+        let config = CFG.device_configs[&*key].clone();
         config
     };
 }

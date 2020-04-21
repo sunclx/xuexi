@@ -1,6 +1,8 @@
-use super::config::KEY;
+use super::config::{CFG, KEY};
 use druid::widget::prelude::*;
-use druid::widget::{Button, Checkbox, CrossAxisAlignment, Either, Flex, Label, Switch, WidgetExt};
+use druid::widget::{
+    Button, Checkbox, CrossAxisAlignment, Either, Flex, Label, RadioGroup, Switch, WidgetExt,
+};
 use druid::{AppLauncher, Data, Key, Lens, LocalizedString, WindowDesc};
 use std::sync::Arc;
 use std::thread;
@@ -14,15 +16,20 @@ pub struct ArgsState {
     pub challenge: bool,
     pub daily: bool,
     start: bool,
-    mumu: bool,
+    device: String,
 }
 
 fn build_ui() -> impl Widget<ArgsState> {
+    let radios = RadioGroup::new(
+        CFG.device_configs
+            .keys()
+            .map(|key| (key.to_string(), key.to_string())),
+    );
     Flex::column()
         .with_child(
             Flex::row()
                 .with_child(Label::new("设置"))
-                .with_child(Checkbox::new("mumu").lens(ArgsState::mumu))
+                .with_child(radios.lens(ArgsState::device))
                 .padding(5.0),
         )
         .with_child(
@@ -53,11 +60,10 @@ fn build_ui() -> impl Widget<ArgsState> {
             Flex::row()
                 .with_child(
                     Button::new("开始").on_click(|_ctx, data: &mut ArgsState, _env| {
-                        if data.mumu {
-                            let key = Arc::clone(&KEY);
-                            let mut b = key.lock().unwrap();
-                            *b = true;
-                        }
+                        println!("{:?}", data.device);
+                        let key = Arc::clone(&KEY);
+                        let mut b = key.lock().unwrap();
+                        *b = data.device.clone();
                         if !data.start {
                             data.start = true;
                             let data = data.clone();
@@ -84,7 +90,7 @@ pub fn run_ui() {
         challenge: true,
         daily: true,
         start: false,
-        mumu: false,
+        device: "mumu".to_string(),
     };
     // describe the main window
     let main_window = WindowDesc::new(build_ui)
