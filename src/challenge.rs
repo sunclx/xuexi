@@ -1,6 +1,6 @@
 use super::android::{content_options_positons, draw, dump, load, return_home, sleep, tap, Xpath};
 use super::config::{CFG, DCFG as d};
-use super::db::*;
+use super::db::{Bank, DB};
 use rand::{thread_rng, Rng};
 pub struct Challenge {
     db: DB,
@@ -50,7 +50,7 @@ impl Challenge {
             i += 1;
             // 将正确答案添加到数据库
             if !self.has_bank {
-                self.db.add(&BankQuery::from(&self.bank));
+                self.db.add(&self.bank);
             }
         }
         println!("已经达成目标题数（{}题），退出挑战", i);
@@ -118,8 +118,7 @@ impl Challenge {
         // 删除数据库中错误题目
         if self.has_bank {
             println!("删除数据库中错题");
-            let bq = BankQuery::from(&self.bank);
-            self.db.delete(&bq);
+            self.db.delete(&self.bank);
         }
     }
 }
