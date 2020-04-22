@@ -108,12 +108,11 @@ impl Challenge {
     fn dump(&mut self) {
         // 在note中追加一个错误答案，以供下次遇到排除
         let mut bank = self.bank.clone();
-        match self.banks.iter_mut().find(|b| **b == bank) {
-            Some(b) => b.notes.push_str(&self.bank.answer),
-            None => {
-                bank.notes.push_str(&self.bank.answer);
-                self.banks.push(bank);
-            }
+        if let Some(b) = self.banks.iter_mut().find(|b| **b == bank) {
+            b.notes.push_str(&self.bank.answer)
+        } else {
+            bank.notes.push_str(&self.bank.answer);
+            self.banks.push(bank);
         }
         dump(&self.filename, &self.banks);
         // 删除数据库中错误题目

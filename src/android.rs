@@ -12,9 +12,7 @@ use std::time::Duration;
 lazy_static! {
     static ref FILENAME: String = { d.xml_uri.clone() };
     pub static ref DEVICE: String = {
-        let host = &d.host;
-        let port = &d.port;
-        connect(host, port);
+        connect(&d.host, &d.port);
         get_devices().expect("未连接设备")
     };
     pub static ref IME: String = { get_ime().expect("获取输入法失败") };
@@ -231,23 +229,31 @@ impl Xpath for XpathString {
         let mut v: Vec<(usize, usize)> = vec![];
         for s in self.texts() {
             let caps = RE_POSITION.captures(&s).unwrap();
-            let x0: usize = caps[1].parse().unwrap();
-            let y0: usize = caps[2].parse().unwrap();
-            let x1: usize = caps[3].parse().unwrap();
-            let y1: usize = caps[4].parse().unwrap();
-            let x = (x0 + x1) / 2;
-            let y = (y0 + y1) / 2;
+            let s: Vec<usize> = caps
+                .iter()
+                .filter_map(|x| x)
+                .filter_map(|x| x.as_str().parse().ok())
+                .take(4)
+                .collect();
+            // let x0: usize = caps[1].parse().unwrap();
+            // let y0: usize = caps[2].parse().unwrap();
+            // let x1: usize = caps[3].parse().unwrap();
+            // let y1: usize = caps[4].parse().unwrap();
+            let x = (s[0] + s[2]) / 2;
+            let y = (s[1] + s[3]) / 2;
             v.push((x, y));
         }
         return v;
     }
     fn click(&self) {
         let mut ptns = vec![];
-        for _ in 0..20 {
+        for _ in 0..10 {
             ptns = self.positions();
             if ptns.len() == 1 {
                 break;
             }
+            dbg!(&self);
+            panic!("click failed");
         }
         let (x, y) = ptns[0];
         tap(x, y);
