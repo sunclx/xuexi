@@ -178,14 +178,13 @@ pub fn content_options_positons(
     let positions = positions
         .iter()
         .map(|s| {
-            let cap = RE_POSITION.captures(s).unwrap();
-            let x0: usize = cap[1].parse().unwrap();
-            let y0: usize = cap[2].parse().unwrap();
-            let x1: usize = cap[3].parse().unwrap();
-            let y1: usize = cap[4].parse().unwrap();
-            let x = (x0 + x1) / 2;
-            let y = (y0 + y1) / 2;
-            (x, y)
+            let caps = RE_POSITION.captures(&s).unwrap();
+            let s: Vec<usize> = caps
+                .iter()
+                .filter_map(|x| x)
+                .filter_map(|x| x.as_str().parse().ok())
+                .collect();
+            ((s[0] + s[2]) / 2, (s[1] + s[3]) / 2)
         })
         .collect();
 
@@ -226,24 +225,18 @@ impl Xpath for XpathString {
         xpath(&self)
     }
     fn positions(&self) -> Vec<(usize, usize)> {
-        let mut v: Vec<(usize, usize)> = vec![];
-        for s in self.texts() {
-            let caps = RE_POSITION.captures(&s).unwrap();
-            let s: Vec<usize> = caps
-                .iter()
-                .filter_map(|x| x)
-                .filter_map(|x| x.as_str().parse().ok())
-                .take(4)
-                .collect();
-            // let x0: usize = caps[1].parse().unwrap();
-            // let y0: usize = caps[2].parse().unwrap();
-            // let x1: usize = caps[3].parse().unwrap();
-            // let y1: usize = caps[4].parse().unwrap();
-            let x = (s[0] + s[2]) / 2;
-            let y = (s[1] + s[3]) / 2;
-            v.push((x, y));
-        }
-        return v;
+        self.texts()
+            .iter()
+            .map(|s| {
+                let caps = RE_POSITION.captures(&s).unwrap();
+                let s: Vec<usize> = caps
+                    .iter()
+                    .filter_map(|x| x)
+                    .filter_map(|x| x.as_str().parse().ok())
+                    .collect();
+                ((s[0] + s[2]) / 2, (s[1] + s[3]) / 2)
+            })
+            .collect()
     }
     fn click(&self) {
         let mut ptns = vec![];
