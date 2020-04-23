@@ -25,7 +25,7 @@ fn get_comment(name: &str) -> String {
         for tag in &comment.tags {
             if name.contains(tag) {
                 let mut _comment = String::with_capacity(8 * 4 * 50);
-                while _comment.chars().count() < 28 {
+                while _comment.chars().count() < 32 {
                     let i = rng.gen_range(0, comment.content.len());
                     _comment.push_str(&comment.content[i]);
                 }
@@ -34,7 +34,7 @@ fn get_comment(name: &str) -> String {
         }
     }
     let mut _comment = String::with_capacity(8 * 4 * 50);
-    while _comment.chars().count() < 28 {
+    while _comment.chars().count() < 32 {
         let i = rng.gen_range(0, COMMENTS[0].content.len());
         _comment.push_str(&COMMENTS[0].content[i]);
     }
