@@ -24,15 +24,21 @@ fn get_comment(name: &str) -> String {
     for comment in COMMENTS.iter() {
         for tag in &comment.tags {
             if name.contains(tag) {
-                let i = rng.gen_range(0, comment.content.len());
-                let i2 = rng.gen_range(0, comment.content.len());
-                return comment.content[i].clone() + &comment.content[i2];
+                let mut _comment = String::with_capacity(8 * 4 * 50);
+                while _comment.chars().count() < 28 {
+                    let i = rng.gen_range(0, comment.content.len());
+                    _comment.push_str(&comment.content[i]);
+                }
+                return _comment;
             }
         }
     }
-    let i = rng.gen_range(0, COMMENTS[0].content.len());
-    let i2 = rng.gen_range(0, COMMENTS[0].content.len());
-    return COMMENTS[0].content[i].clone() + &COMMENTS[0].content[i2];
+    let mut _comment = String::with_capacity(8 * 4 * 50);
+    while _comment.chars().count() < 28 {
+        let i = rng.gen_range(0, COMMENTS[0].content.len());
+        _comment.push_str(&COMMENTS[0].content[i]);
+    }
+    return _comment;
 }
 
 pub struct Reader;
