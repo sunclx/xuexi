@@ -20,13 +20,9 @@ impl Daily {
     pub fn new() -> Self {
         &IME;
         set_ime("com.android.adbkeyboard/.AdbIME");
-        let database_uri = &CFG.database_uri;
-
-        //  config("database_uri");
-        let db = DB::new(database_uri);
         Self {
             bank: Bank::new(),
-            db: db,
+            db: DB::new(&CFG.database_uri),
             has_bank: false,
             submit_position: None,
         }
@@ -103,12 +99,8 @@ impl Daily {
                 let (x, y) = self.submit_position.unwrap();
                 tap(x, y);
                 // 删除错误数据
-                if self.has_bank {
-                    self.db.delete(&self.bank);
-                    self.db.add(&self.bank);
-                } else {
-                    self.db.add(&self.bank);
-                }
+                self.db.delete(&self.bank);
+                self.db.add(&self.bank);
             }
             [] => {
                 println!("回答正确");
@@ -121,8 +113,7 @@ impl Daily {
         Ok(())
     }
     fn blank(&mut self) {
-        let contents = d.rule_blank_content.texts();
-        self.bank.content = contents.join("");
+        self.bank.content = d.rule_blank_content.texts().join("");
         let edits = d.rule_edits.positions();
         let count_blank = edits.len();
         self.bank.options = count_blank.to_string();

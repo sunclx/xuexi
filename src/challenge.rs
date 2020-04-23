@@ -1,7 +1,7 @@
 use super::android::{content_options_positons, draw, dump, load, return_home, sleep, tap, Xpath};
 use super::config::{CFG, DCFG as d};
 use super::db::{Bank, DB};
-use rand::{thread_rng, Rng};
+
 pub struct Challenge {
     db: DB,
     filename: String,
@@ -11,14 +11,12 @@ pub struct Challenge {
 }
 impl Challenge {
     pub fn new() -> Self {
-        let filename = &CFG.challenge_json;
-        let banks = load(filename);
-        let database_uri = &CFG.database_uri;
-        let db = DB::new(database_uri);
+        let filename = CFG.challenge_json.clone();
+        let banks = load(&filename);
         Self {
             bank: Bank::new(),
-            db: db,
-            filename: filename.clone(),
+            db: DB::new(&CFG.database_uri),
+            filename: filename,
             has_bank: false,
             banks: banks,
         }
@@ -33,10 +31,7 @@ impl Challenge {
 
         // 开始
         let mut i = 0;
-        let mut rng = thread_rng();
         while i < CFG.challenge_count {
-            let challenge_delay = rng.gen_range(1, 2);
-            sleep(challenge_delay);
             print!("第{}题", i);
             self.submit();
             sleep(2);
@@ -65,8 +60,8 @@ impl Challenge {
         );
         self.bank.clear();
         self.bank.category.push_str("单选题");
-        self.bank.content.push_str(&content);
-        self.bank.options.push_str(&options);
+        self.bank.content = content;
+        self.bank.options = options;
         match &*self.db.query(&self.bank) {
             [b, ..] => {
                 self.has_bank = true;
