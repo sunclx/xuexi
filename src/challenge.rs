@@ -28,13 +28,14 @@ impl Challenge {
         d.rule_bottom_mine.click();
         d.rule_quiz_entry.click();
         d.rule_challenge_entry.click();
+        sleep(2);
 
         // 开始
         let mut i = 0;
         while i < CFG.challenge_count {
             print!("第{}题", i);
             self.submit();
-            sleep(2);
+            sleep(3);
             if d.rule_judge_bounds.positions().len() > 0 {
                 self.dump();
                 d.rule_close_bounds.click();
