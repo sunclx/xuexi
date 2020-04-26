@@ -35,11 +35,12 @@ impl Challenge {
         while i < CFG.challenge_count {
             print!("第{}题", i);
             self.submit();
-            sleep(3);
+            d.rule_judge_bounds.positions();
             if d.rule_judge_bounds.positions().len() > 0 {
                 self.dump();
                 d.rule_close_bounds.click();
                 d.rule_again_bounds.click();
+                sleep(2);
                 i = 0;
                 continue;
             }

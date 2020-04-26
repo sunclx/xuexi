@@ -1,14 +1,7 @@
 use super::config::{XpathString, DCFG as d};
 use super::db::Bank;
-use amxml::dom::new_document;
 use regex::Regex;
-use std::fs::read_to_string;
-use std::fs::File as StdFile;
-use std::path::Path;
 use std::process::Command;
-use std::thread;
-use std::time::Duration;
-
 lazy_static! {
     static ref FILENAME: String = { d.xml_uri.clone() };
     pub static ref DEVICE: String = {
@@ -151,8 +144,8 @@ pub fn uiautomator() {
         .expect("failed");
 }
 pub fn xpath(xpath_rule: &str) -> Vec<String> {
-    let xml = read_to_string(FILENAME.as_str()).expect("读取xml文件失败");
-    let res = new_document(&xml)
+    let xml = std::fs::read_to_string(FILENAME.as_str()).expect("读取xml文件失败");
+    let res = amxml::dom::new_document(&xml)
         .expect("解析xml文件失败")
         .root_element()
         .get_nodeset(xpath_rule)
@@ -201,18 +194,18 @@ pub fn return_home() {
     tap(x, y);
 }
 
-pub fn load<P: AsRef<Path>>(path: P) -> Vec<Bank> {
+pub fn load<P: AsRef<std::path::Path>>(path: P) -> Vec<Bank> {
     let s = std::fs::read_to_string(path).unwrap();
     let v: Vec<Bank> = serde_json::from_str(&s).unwrap();
     return v;
 }
-pub fn dump<P: AsRef<Path>>(path: P, banks: &Vec<Bank>) {
-    let f = StdFile::create(path).unwrap();
+pub fn dump<P: AsRef<std::path::Path>>(path: P, banks: &Vec<Bank>) {
+    let f = std::fs::File::create(path).unwrap();
     serde_json::to_writer_pretty(f, banks).unwrap();
 }
 
 pub fn sleep(second: u64) {
-    thread::sleep(Duration::from_secs(second));
+    std::thread::sleep(std::time::Duration::from_secs(second));
 }
 pub trait Xpath {
     fn click(&self);
@@ -239,16 +232,13 @@ impl Xpath for XpathString {
             .collect()
     }
     fn click(&self) {
-        let mut ptns = vec![];
         for _ in 0..10 {
-            ptns = self.positions();
-            if ptns.len() == 1 {
-                break;
-            }
-            dbg!(&self);
-            panic!("click failed");
+            if let [(x, y)] = &*self.positions() {
+                tap(*x, *y);
+                return;
+            };
         }
-        let (x, y) = ptns[0];
-        tap(x, y);
+        dbg!(&self);
+        panic!("click failed");
     }
 }

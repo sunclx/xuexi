@@ -1,25 +1,21 @@
-use super::android::{
-    back, draw, get_ime, input, return_home, set_ime, sleep, swipe, tap, Xpath, IME,
-};
+use super::android::{back, draw, input, return_home, set_ime, sleep, swipe, tap, Xpath, IME};
 use super::config::{CFG, DCFG as d};
 use rand::Rng;
-use serde::{Deserialize, Serialize};
-use std::time::Instant;
-lazy_static! {
-    static ref COMMENTS: Vec<Comment> = {
-        let comments_str = include_str!("../resource/comments.json");
-        let comments: Vec<Comment> = serde_json::from_str(comments_str).unwrap();
-        comments
-    };
-}
-#[derive(Debug, Serialize, Deserialize, Clone)]
+use serde::Deserialize;
+
+#[derive(Debug, Deserialize, Clone)]
 struct Comment {
-    id: u64,
     tags: Vec<String>,
     content: Vec<String>,
 }
 fn get_comment(name: &str) -> String {
-    //let msg = "不忘初心牢记使命！为实现中华民族伟大复兴的中国梦不懈奋斗！";
+    lazy_static! {
+        static ref COMMENTS: Vec<Comment> = {
+            let comments_str = include_str!("comments.json");
+            let comments: Vec<Comment> = serde_json::from_str(comments_str).unwrap();
+            comments
+        };
+    }
     let mut rng = rand::thread_rng();
     for comment in COMMENTS.iter() {
         for tag in &comment.tags {
@@ -52,14 +48,12 @@ impl Reader {
     pub fn new() -> Self {
         &IME;
         set_ime("com.android.adbkeyboard/.AdbIME");
-        get_ime();
         Self
     }
     pub fn run(&self) {
         println!("开始新闻学习");
         self.enter();
         let mut ssc = CFG.star_share_comment;
-
         let mut i = 1;
         let mut article_list = Vec::<String>::new();
         while i < CFG.article_count {
@@ -69,21 +63,22 @@ impl Reader {
                 if article_list.iter().any(|x| x == title) {
                     continue;
                 }
-                println!("新闻[{}]\t{}", i, title);
+                println!("新闻[{}]: {}", i, title);
                 tap(*x, *y);
-                let now = Instant::now();
+                let now = std::time::Instant::now();
                 article_list.push(title.to_string());
                 self.read_new(CFG.article_delay);
                 if ssc > 0 {
                     ssc -= self.star_share_comment(title);
                 }
                 back();
-                println!("新闻[{}]已阅，耗时{:?}", i, now.elapsed());
+                println!("新闻已阅，耗时{:}秒", now.elapsed().as_secs());
                 i += 1;
             }
             draw()
         }
         return_home();
+        println!("新闻学习结束");
     }
     fn enter(&self) {
         return_home();
@@ -119,25 +114,13 @@ impl Reader {
         println!("分享一篇文章!");
         back();
 
-        //let msg = "不忘初心牢记使命！为实现中华民族伟大复兴的中国梦不懈奋斗！";
-        let msg = get_comment(title);
-
         // 留言
         d.rule_comment_bounds.click();
         d.rule_comment2_bounds.click();
+        let msg = get_comment(title);
         input(&msg);
         println!("留言一篇文章: {}", &msg);
-
         d.rule_publish_bounds.click();
-
-        // pos_publish = self.positions('rule_publish_bounds')
-        // if len(pos_publish) == 1:
-        //     print(f'# {pos_publish}没点着，按偏移量再点一次')
-        //     offset = round(0.0203 * max(Base.WM_SIZE) + 0.7595)
-        //     print(f'发布按钮偏移量 {offset} 屏幕大小 {Base.WM_SIZE}')
-        //     x, y = pos_publish[0]
-        //     # 由于下面有一栏输入法提示，导致这里pos或出现offset位置偏差，多点一次
-        //     self.tap(x, y - offset)
 
         // 收藏
         d.rule_star_bounds.click();
@@ -147,9 +130,9 @@ impl Reader {
         if !CFG.keep_star_comment {
             for (x, y) in d.rule_delete_bounds.positions() {
                 tap(x, y);
+                d.rule_delete_confirm_bounds.click();
+                println!("删除评论");
             }
-            d.rule_delete_confirm_bounds.click();
-            println!("删除评论");
             d.rule_star_bounds.click();
             println!("取消收藏");
         }

@@ -27,16 +27,13 @@ fn xuexi(args: ui::ArgsState) {
     // current.pop();
     // env::set_current_dir(current).unwrap();
     let mut args = args;
-
     println!("当前工作目录{:?}", env::current_dir());
     println!("设备名称: {}", android::DEVICE.as_str());
-
     if args.auto {
         println!("获取学习积分情况");
         android::return_home();
         d.rule_bottom_mine.click();
         d.rule_bonus_entry.click();
-
         let mut bonus = HashMap::new();
         while bonus.len() == 0 {
             let titles = d.rule_bonus_title.texts();

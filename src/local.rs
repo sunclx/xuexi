@@ -1,7 +1,6 @@
 use super::android::{return_home, sleep, swipe, tap, Xpath};
 use super::config::{CFG, DCFG as d};
 pub struct Local;
-
 impl Local {
     pub fn new() -> Self {
         Self
@@ -27,7 +26,7 @@ impl Local {
         self.enter();
         d.rule_local_bounds.click();
         sleep(10);
-        println!("本地频道结束");
         return_home();
+        println!("本地频道结束");
     }
 }
