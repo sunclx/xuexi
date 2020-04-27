@@ -64,19 +64,16 @@ impl Challenge {
         self.bank.category.push_str("单选题");
         self.bank.content = content;
         self.bank.options = options;
-        match &*self.db.query(&self.bank) {
-            [b, ..] => {
-                self.has_bank = true;
-                self.bank.answer.push_str(&b.answer);
-                println!("{}", &self.bank);
-                println!("自动提交答案 {}", &self.bank.answer);
-            }
-            [] => {
-                self.has_bank = false;
-                println!("{}", &self.bank);
-                self.bank.answer.push('A');
-                println!("试探性提交答案 {}", &self.bank.answer);
-            }
+        if let [b, ..] = &*self.db.query(&self.bank) {
+            self.has_bank = true;
+            self.bank.answer.push_str(&b.answer);
+            println!("{}", &self.bank);
+            println!("自动提交答案 {}", &self.bank.answer);
+        } else {
+            self.has_bank = false;
+            println!("{}", &self.bank);
+            self.bank.answer.push('A');
+            println!("试探性提交答案 {}", &self.bank.answer);
         }
         let mut bank = self.bank.clone();
         if let Some(b) = self.banks.iter_mut().find(|b| **b == bank) {
@@ -98,7 +95,6 @@ impl Challenge {
             draw();
             ptns = d.rule_challenge_options_bounds.positions();
         }
-        // 现在可以安全点击(触摸)
         let (x, y) = ptns[cursor];
         tap(x, y);
     }

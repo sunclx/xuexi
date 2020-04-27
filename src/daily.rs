@@ -3,7 +3,6 @@ use super::android::{
 };
 use super::config::{CFG, DCFG as d};
 use super::db::*;
-use rand::{thread_rng, Rng};
 
 pub struct Daily {
     db: DB,
@@ -27,20 +26,14 @@ impl Daily {
             submit_position: None,
         }
     }
-
-    pub fn enter(&self) {
+    pub fn run(&mut self) {
+        println!("开始每日答题");
         return_home();
+        let count = 10;
+        let daily_delay = CFG.daily_delay;
         d.rule_bottom_mine.click();
         d.rule_quiz_entry.click();
         d.rule_daily_entry.click();
-    }
-    pub fn run(&mut self) {
-        // # 每日答题，每组题数
-        let count = 10;
-        let mut rng = thread_rng();
-        let daily_delay = rng.gen_range(1, CFG.daily_delay);
-        println!("开始每日答题");
-        self.enter();
         let mut group = 1;
         'out: loop {
             println!("\n<----正在答题,第 {} 组---->", group);
@@ -91,23 +84,20 @@ impl Daily {
 
         // # 填好空格或选中选项后
         // 提交答案后，获取答案解析，若为空，则回答正确，否则，返回正确答案
-        match &*d.rule_desc.texts() {
-            [des, ..] => {
-                self.bank.answer = des.replace(r"正确答案：", "");
-                println!("正确答案：{}", &self.bank.answer);
-                self.bank.notes.push_str(&d.rule_note.texts()[0]);
-                let (x, y) = self.submit_position.unwrap();
-                tap(x, y);
-                // 删除错误数据
-                self.db.delete(&self.bank);
+        if let [des, ..] = &*d.rule_desc.texts() {
+            self.bank.answer = des.replace(r"正确答案：", "");
+            println!("正确答案：{}", &self.bank.answer);
+            self.bank.notes.push_str(&d.rule_note.texts()[0]);
+            let (x, y) = self.submit_position.unwrap();
+            tap(x, y);
+            // 删除错误数据
+            self.db.delete(&self.bank);
+            self.db.add(&self.bank);
+        } else {
+            println!("回答正确");
+            // #保存数据
+            if !self.has_bank {
                 self.db.add(&self.bank);
-            }
-            [] => {
-                println!("回答正确");
-                // #保存数据
-                if !self.has_bank {
-                    self.db.add(&self.bank);
-                }
             }
         }
         Ok(())
@@ -115,28 +105,24 @@ impl Daily {
     fn blank(&mut self) {
         self.bank.content = d.rule_blank_content.texts().join("");
         let edits = d.rule_edits.positions();
-        let count_blank = edits.len();
-        self.bank.options = count_blank.to_string();
-        match &*self.db.query(&self.bank) {
-            [b, ..] => {
-                self.has_bank = true;
-                self.bank.answer.push_str(&b.answer);
-                println!("{}", &self.bank);
-                println!("自动提交答案 {}", &self.bank.answer);
-                let answer = self.bank.answer.replace(" ", "");
-                for (answer, (x, y)) in answer.chars().zip(edits.iter()) {
-                    tap(*x, *y);
-                    input(&answer.to_string());
-                }
+        self.bank.options = edits.len().to_string();
+        if let [b, ..] = &*self.db.query(&self.bank) {
+            self.has_bank = true;
+            self.bank.answer.push_str(&b.answer);
+            println!("{}", &self.bank);
+            println!("自动提交答案 {}", &self.bank.answer);
+            let answer = self.bank.answer.replace(" ", "");
+            for (answer, (x, y)) in answer.chars().zip(edits.iter()) {
+                tap(*x, *y);
+                input(&answer.to_string());
             }
-            [] => {
-                self.has_bank = false;
-                println!("{}", &self.bank);
-                println!("默认提交答案: 不忘初心牢记使命");
-                for ((x, y), answer) in edits.iter().zip("不忘初心牢记使命".chars()) {
-                    tap(*x, *y);
-                    input(&answer.to_string());
-                }
+        } else {
+            self.has_bank = false;
+            println!("{}", &self.bank);
+            println!("默认提交答案: 不忘初心牢记使命");
+            for ((x, y), answer) in edits.iter().zip("不忘初心牢记使命".chars()) {
+                tap(*x, *y);
+                input(&answer.to_string());
             }
         }
     }
@@ -148,30 +134,24 @@ impl Daily {
         );
         self.bank.content = content;
         self.bank.options = options;
-        match &*self.db.query(&self.bank) {
-            [b, ..] => {
-                self.has_bank = true;
-                self.bank.answer.push_str(&b.answer);
-                println!("{}", &self.bank);
-                println!("自动提交答案 {}", &self.bank.answer);
-            }
-            [] => {
-                self.has_bank = false;
-                println!("{}", &self.bank);
-                println!("默认提交答案: A");
-                self.bank.answer.push('A');
-            }
+        if let [b, ..] = &*self.db.query(&self.bank) {
+            self.has_bank = true;
+            self.bank.answer.push_str(&b.answer);
+            println!("{}", &self.bank);
+            println!("自动提交答案 {}", &self.bank.answer);
+        } else {
+            self.has_bank = false;
+            println!("{}", &self.bank);
+            println!("默认提交答案: A");
+            self.bank.answer.push('A');
         }
         let cursor = self.bank.answer.chars().nth(0).unwrap() as usize - 65;
-        match ptns[cursor] {
-            (0, 0) => {
-                draw();
-                ptns = d.rule_options.positions();
-                let (x, y) = ptns[cursor];
-                tap(x, y);
-            }
-            (x, y) => tap(x, y),
+        while (0, 0) == ptns[cursor] {
+            draw();
+            ptns = d.rule_challenge_options_bounds.positions();
         }
+        let (x, y) = ptns[cursor];
+        tap(x, y);
     }
     fn check(&mut self) {
         let (content, options, mut ptns) = content_options_positons(
@@ -182,33 +162,27 @@ impl Daily {
         self.bank.content = content;
         self.bank.options = options;
         let answers: String;
-        match &*self.db.query(&self.bank) {
-            [b, ..] => {
-                self.has_bank = true;
-                self.bank.answer.push_str(&b.answer);
-                println!("{}", &self.bank);
-                println!("自动提交答案 {}", &self.bank.answer);
-                answers = self.bank.answer.clone();
-            }
-            [] => {
-                self.has_bank = false;
-                println!("{}", &self.bank);
-                println!("默认提交答案: 全选");
-                answers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[..ptns.len()].to_string();
-                self.bank.answer.push_str(&answers);
-            }
+        if let [b, ..] = &*self.db.query(&self.bank) {
+            self.has_bank = true;
+            self.bank.answer.push_str(&b.answer);
+            println!("{}", &self.bank);
+            println!("自动提交答案 {}", &self.bank.answer);
+            answers = self.bank.answer.clone();
+        } else {
+            self.has_bank = false;
+            println!("{}", &self.bank);
+            println!("默认提交答案: 全选");
+            answers = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"[..ptns.len()].to_string();
+            self.bank.answer.push_str(&answers);
         }
         for c in answers.chars() {
             let cursor = c as usize - 65;
-            match ptns[cursor] {
-                (0, 0) => {
-                    draw();
-                    ptns = d.rule_options.positions();
-                    let (x, y) = ptns[cursor];
-                    tap(x, y);
-                }
-                (x, y) => tap(x, y),
+            while (0, 0) == ptns[cursor] {
+                draw();
+                ptns = d.rule_challenge_options_bounds.positions();
             }
+            let (x, y) = ptns[cursor];
+            tap(x, y);
         }
     }
 }

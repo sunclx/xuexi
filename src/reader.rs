@@ -16,23 +16,15 @@ fn get_comment(name: &str) -> String {
             comments
         };
     }
+    let comment = COMMENTS
+        .iter()
+        .find(|comment| comment.tags.iter().any(|tag| name.contains(tag)))
+        .unwrap_or(&COMMENTS[0]);
     let mut rng = rand::thread_rng();
-    for comment in COMMENTS.iter() {
-        for tag in &comment.tags {
-            if name.contains(tag) {
-                let mut _comment = String::with_capacity(8 * 4 * 50);
-                while _comment.chars().count() < 32 {
-                    let i = rng.gen_range(0, comment.content.len());
-                    _comment.push_str(&comment.content[i]);
-                }
-                return _comment;
-            }
-        }
-    }
     let mut _comment = String::with_capacity(8 * 4 * 50);
     while _comment.chars().count() < 32 {
-        let i = rng.gen_range(0, COMMENTS[0].content.len());
-        _comment.push_str(&COMMENTS[0].content[i]);
+        let i = rng.gen_range(0, comment.content.len());
+        _comment.push_str(&comment.content[i]);
     }
     return _comment;
 }
@@ -50,36 +42,6 @@ impl Reader {
         set_ime("com.android.adbkeyboard/.AdbIME");
         Self
     }
-    pub fn run(&self) {
-        println!("开始新闻学习");
-        self.enter();
-        let mut ssc = CFG.star_share_comment;
-        let mut i = 1;
-        let mut article_list = Vec::<String>::new();
-        while i < CFG.article_count {
-            let titles = d.rule_news_content.texts();
-            let positions = d.rule_news_bounds.positions();
-            for (title, (x, y)) in titles.iter().zip(positions.iter()) {
-                if article_list.iter().any(|x| x == title) {
-                    continue;
-                }
-                println!("新闻[{}]: {}", i, title);
-                tap(*x, *y);
-                let now = std::time::Instant::now();
-                article_list.push(title.to_string());
-                self.read_new(CFG.article_delay);
-                if ssc > 0 {
-                    ssc -= self.star_share_comment(title);
-                }
-                back();
-                println!("新闻已阅，耗时{:}秒", now.elapsed().as_secs());
-                i += 1;
-            }
-            draw()
-        }
-        return_home();
-        println!("新闻学习结束");
-    }
     fn enter(&self) {
         return_home();
         for _ in 0..10 {
@@ -96,13 +58,41 @@ impl Reader {
             swipe(x1, y1, x0, y0, 500);
         }
     }
-    fn read_new(&self, delay: u64) {
-        sleep(delay / 3);
-        draw();
-        sleep(delay / 3);
-        draw();
-        sleep(delay / 3);
+    pub fn run(&self) {
+        println!("开始新闻学习");
+        self.enter();
+        let mut ssc = CFG.star_share_comment;
+        let mut i = 1;
+        let mut article_list = vec![];
+        while i < CFG.article_count {
+            let titles = d.rule_news_content.texts();
+            let positions = d.rule_news_bounds.positions();
+            for (title, (x, y)) in titles.iter().zip(positions.iter()) {
+                if article_list.contains(title) {
+                    continue;
+                }
+                println!("新闻[{}]: {}", i, title);
+                tap(*x, *y);
+                let now = std::time::Instant::now();
+                article_list.push(title.clone());
+                sleep(CFG.article_delay / 3);
+                draw();
+                sleep(CFG.article_delay / 3);
+                draw();
+                sleep(CFG.article_delay / 3);
+                if ssc > 0 {
+                    ssc -= self.star_share_comment(title);
+                }
+                back();
+                println!("新闻已阅，耗时{:}秒", now.elapsed().as_secs());
+                i += 1;
+            }
+            draw()
+        }
+        return_home();
+        println!("新闻学习结束");
     }
+
     fn star_share_comment(&self, title: &str) -> u64 {
         let p = d.rule_comment_bounds.texts();
         if p.len() != 1 {
@@ -116,10 +106,13 @@ impl Reader {
 
         // 留言
         d.rule_comment_bounds.click();
-        d.rule_comment2_bounds.click();
-        let msg = get_comment(title);
-        input(&msg);
-        println!("留言一篇文章: {}", &msg);
+        while let [(x, y)] = &*d.rule_comment2_bounds.positions() {
+            tap(*x, *y);
+            let msg = get_comment(title);
+            set_ime("com.android.adbkeyboard/.AdbIME");
+            input(&msg);
+            println!("留言一篇文章: {}", &msg);
+        }
         d.rule_publish_bounds.click();
 
         // 收藏

@@ -13,11 +13,11 @@ comments_json = './resource/comments.json'
 # 是否用户,标记是否保存新题副本
 is_user = false
 # 每日答题永不停
-daily_forever = true
+daily_forever = false
 # 每日答题每组时间间隔 之前有发生过10秒内开始下一组不得分的情况，后来又没了，所以把这个时间间隔写活
 daily_delay = 3
 # 挑战答题题数， 积分设为10+， 积点点通设为30+
-challenge_count = 200
+challenge_count = 20
 # 挑战答题时延， 设0-5， 0表示随机
 challenge_delay = 0
 
@@ -60,7 +60,7 @@ xml_uri = './resource/uimumu.xml'
 # Genymotion 5555
 # BlueStacks 5555
 host = '127.0.0.1'
-port = '5555'
+port = '7555'
 
 # rule前缀为xpath规则，pos前缀为坐标的复数形式
 # ======================================兄弟节点、父节点示例======================================================
@@ -159,7 +159,7 @@ rule_share2xuexi_bounds ='//node[@text="分享到学习强国"]/@bounds'
 rule_publish_bounds ='//node[@text="发布"]/@bounds'
 rule_delete_bounds ='//node[@text="删除"]/@bounds'
 rule_delete_confirm_bounds ='//node[@text="确认"]/@bounds'
-rule_comment2_bounds ='//node[@class="android.widget.EditText"]/@bounds'
+rule_comment2_bounds ='//node[@text="好观点将会被优先展示"]/@bounds'
 
 # 华为P10PLUS
 [huawei]
@@ -259,4 +259,4 @@ rule_share2xuexi_bounds ='//node[@text="分享到学习强国"]/@bounds'
 rule_publish_bounds ='//node[@text="发布"]/@bounds'
 rule_delete_bounds ='//node[@text="删除"]/@bounds'
 rule_delete_confirm_bounds ='//node[@text="确认"]/@bounds'
-rule_comment2_bounds = '//node[@class="android.widget.EditText"]/@bounds'
+rule_comment2_bounds = '//node[@text="好观点将会被优先展示"]/@bounds'
