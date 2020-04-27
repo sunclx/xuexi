@@ -5,8 +5,7 @@ impl Local {
     pub fn new() -> Self {
         Self
     }
-    pub fn run(&self) {
-        println!("开始本地频道");
+    fn enter(&self) {
         return_home();
         for _ in 0..10 {
             let txts = d.rule_columns_content.texts();
@@ -21,6 +20,10 @@ impl Local {
             let (x1, y1) = ptns[ptns.len() - 2];
             swipe(x1, y1, x0, y0, 500);
         }
+    }
+    pub fn run(&self) {
+        println!("开始本地频道");
+        self.enter();
         d.rule_local_bounds.click();
         sleep(10);
         return_home();
