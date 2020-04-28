@@ -22,10 +22,12 @@ fn main() {
     ui::run_ui();
 }
 fn xuexi(args: ui::ArgsState) {
-    // #[feature("release")]
-    // let mut current = env::current_exe().unwrap();
-    // current.pop();
-    // env::set_current_dir(current).unwrap();
+    #[cfg(feature = "release")]
+    {
+        let mut current = env::current_exe().unwrap();
+        current.pop();
+        env::set_current_dir(current).unwrap();
+    }
     let mut args = args;
     println!("当前工作目录{:?}", env::current_dir());
     println!("设备名称: {}", android::DEVICE.as_str());

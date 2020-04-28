@@ -111,7 +111,10 @@ impl Daily {
             self.bank.answer.push_str(&b.answer);
             println!("{}", &self.bank);
             println!("自动提交答案 {}", &self.bank.answer);
-            let answer = self.bank.answer.replace(" ", "");
+            let mut answer = self.bank.answer.replace(" ", "");
+            if answer==""{
+                answer="不忘初心牢记使命".to_string();
+            }
             for (answer, (x, y)) in answer.chars().zip(edits.iter()) {
                 tap(*x, *y);
                 input(&answer.to_string());
