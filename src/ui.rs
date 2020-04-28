@@ -1,7 +1,9 @@
+use super::android::connect;
 use super::config::{CFG, KEY};
 use druid::widget::prelude::*;
 use druid::widget::{
-    Button, Checkbox, CrossAxisAlignment, Either, Flex, Label, RadioGroup, Switch, WidgetExt,
+    Button, Checkbox, CrossAxisAlignment, Either, Flex, Label, RadioGroup, Switch, TextBox,
+    WidgetExt,
 };
 use druid::{AppLauncher, Data, Key, Lens, LocalizedString, WindowDesc};
 use std::sync::Arc;
@@ -17,6 +19,8 @@ pub struct ArgsState {
     pub daily: bool,
     start: bool,
     device: String,
+    port: String,
+    host: String,
 }
 
 fn build_ui() -> impl Widget<ArgsState> {
@@ -30,6 +34,21 @@ fn build_ui() -> impl Widget<ArgsState> {
             Flex::row()
                 .with_child(Label::new("设置"))
                 .with_child(radios.lens(ArgsState::device))
+                .padding(5.0),
+        )
+        .with_child(
+            Flex::row()
+                .with_child(
+                    TextBox::new()
+                        .with_placeholder("host")
+                        .lens(ArgsState::host),
+                )
+                .with_spacer(10.)
+                .with_child(
+                    TextBox::new()
+                        .with_placeholder("port")
+                        .lens(ArgsState::port),
+                )
                 .padding(5.0),
         )
         .with_child(
@@ -61,6 +80,7 @@ fn build_ui() -> impl Widget<ArgsState> {
                 .with_child(
                     Button::new("开始").on_click(|_ctx, data: &mut ArgsState, _env| {
                         println!("{:?}", data.device);
+                        connect(&data.host, &data.port);
                         let key = Arc::clone(&KEY);
                         let mut b = key.lock().unwrap();
                         *b = data.device.clone();
@@ -91,6 +111,8 @@ pub fn run_ui() {
         daily: true,
         start: false,
         device: "mumu".to_string(),
+        host: CFG.device_configs["mumu"].host.to_string(),
+        port: CFG.device_configs["mumu"].port.to_string(),
     };
     // describe the main window
     let main_window = WindowDesc::new(build_ui)
