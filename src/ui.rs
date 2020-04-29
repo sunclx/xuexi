@@ -1,13 +1,19 @@
 use super::android::connect;
-use super::config::{CFG, KEY};
+use super::config::{Config, Configuration, Rules};
 use druid::widget::prelude::*;
 use druid::widget::{
     Button, Checkbox, CrossAxisAlignment, Either, Flex, Label, RadioGroup, Switch, TextBox,
     WidgetExt,
 };
-use druid::{AppLauncher, Data, Key, Lens, LocalizedString, WindowDesc};
-use std::sync::Arc;
+use druid::{commands, AppLauncher, Command, Data, Key, Lens, LocalizedString, Target, WindowDesc};
 use std::thread;
+lazy_static! {
+    pub static ref DEVICES: std::collections::HashMap<String, Rules> = {
+        let s = std::fs::read_to_string("./config.toml").unwrap();
+        let c: Configuration = toml::from_str(&s).unwrap();
+        c.device_configs
+    };
+}
 
 #[derive(Clone, Data, Lens)]
 pub struct ArgsState {
@@ -17,22 +23,26 @@ pub struct ArgsState {
     pub video: bool,
     pub challenge: bool,
     pub daily: bool,
-    start: bool,
+    pub config: Config,
+    pub rules: Rules,
     device: String,
+    start: bool,
     port: String,
     host: String,
 }
 
 fn build_ui() -> impl Widget<ArgsState> {
-    let radios = RadioGroup::new(
-        CFG.device_configs
-            .keys()
-            .map(|key| (key.to_string(), key.to_string())),
-    );
+    let radios = RadioGroup::new(DEVICES.keys().map(|key| (key.to_string(), key.to_string())));
     Flex::column()
         .with_child(
             Flex::row()
-                .with_child(Label::new("设置"))
+                .with_child(
+                    Button::new("设置").on_click(|ctx, _data: &mut ArgsState, _env| {
+                        let new_win = WindowDesc::new(build_ui).window_size((300.0, 500.0));
+                        let command = Command::one_shot(commands::NEW_WINDOW, new_win);
+                        ctx.submit_command(command, Target::Global);
+                    }),
+                )
                 .with_child(radios.lens(ArgsState::device))
                 .padding(5.0),
         )
@@ -77,23 +87,21 @@ fn build_ui() -> impl Widget<ArgsState> {
         .with_spacer(20.)
         .with_child(
             Flex::row()
-                .with_child(
-                    Button::new("开始").on_click(|_ctx, data: &mut ArgsState, _env| {
-                        println!("{:?}", data.device);
+                .with_child(Button::new("开始").on_click(
+                    move |_ctx, data: &mut ArgsState, _env| {
+                        println!("{:?}", data.config.device);
                         connect(&data.host, &data.port);
-                        let key = Arc::clone(&KEY);
-                        let mut b = key.lock().unwrap();
-                        *b = data.device.clone();
+                        data.rules = DEVICES[&data.config.device].clone();
                         if !data.start {
                             data.start = true;
                             let data = data.clone();
                             thread::spawn(move || super::xuexi(data.clone()));
                         }
-                    }),
-                )
+                    },
+                ))
                 .with_spacer(10.)
                 .with_child(Button::new("结束").on_click(|ctx, _, _env| {
-                    ctx.submit_command(druid::commands::QUIT_APP, druid::Target::Global);
+                    ctx.submit_command(commands::QUIT_APP, Target::Global);
                 }))
                 .padding(5.0),
         )
@@ -101,6 +109,8 @@ fn build_ui() -> impl Widget<ArgsState> {
         .center()
 }
 pub fn run_ui() {
+    let s = std::fs::read_to_string("./config.toml").unwrap();
+    let config: Config = toml::from_str(&s).unwrap();
     // create the initial app state
     let initial_state = ArgsState {
         auto: true,
@@ -109,10 +119,12 @@ pub fn run_ui() {
         video: true,
         challenge: true,
         daily: true,
-        start: false,
+        config: config,
         device: "mumu".to_string(),
-        host: CFG.device_configs["mumu"].host.to_string(),
-        port: CFG.device_configs["mumu"].port.to_string(),
+        rules: DEVICES["mumu"].clone(),
+        start: false,
+        host: DEVICES["mumu"].host.to_string(),
+        port: DEVICES["mumu"].port.to_string(),
     };
     // describe the main window
     let main_window = WindowDesc::new(build_ui)

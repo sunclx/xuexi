@@ -1,26 +1,8 @@
+use druid::{Data, Lens};
 use serde::{Deserialize, Serialize};
-// use std::cell::Cell;
 use std::collections::HashMap;
 
-use std::fs::read_to_string;
-use std::sync::{Arc, Mutex};
-
-lazy_static! {
-    pub static ref CFG: Config = {
-        let s = read_to_string("./config.toml").unwrap();
-        let c: Config = toml::from_str(&s).unwrap();
-        c
-    };
-    pub static ref KEY: Arc<Mutex<String>> = { Arc::new(Mutex::new(String::from("mumu"))) };
-    pub static ref DCFG: DeviceConfig = {
-        let clone = KEY.clone();
-        let key = clone.lock().unwrap();
-        let config = CFG.device_configs[&*key].clone();
-        config
-    };
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Data, Lens, Default)]
 pub struct Config {
     pub device: String,
     pub database_uri: String,
@@ -44,13 +26,39 @@ pub struct Config {
     pub article_delay: u64,
     pub star_share_comment: u64,
     pub keep_star_comment: bool,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct Configuration {
+    pub device: String,
+    pub database_uri: String,
+    pub database_json: String,
+    pub db_wrong_json: String,
+    pub daily_json: String,
+    pub challenge_json: String,
+    pub comments_json: String,
+    pub is_user: bool,
+    pub daily_forever: bool,
+    pub daily_delay: u64,
+    pub challenge_count: u64,
+    pub challenge_delay: u64,
+    pub video_column_name: String,
+    pub video_count: u64,
+    pub video_delay: u64,
+    pub enable_article_list: bool,
+    pub article_column_name: String,
+    pub local_column_name: String,
+    pub article_count: u64,
+    pub article_delay: u64,
+    pub star_share_comment: u64,
+    pub keep_star_comment: bool,
     #[serde(flatten)]
-    pub device_configs: HashMap<String, DeviceConfig>,
+    pub device_configs: HashMap<String, Rules>,
 }
 pub type XpathString = String;
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct DeviceConfig {
+#[derive(Debug, Serialize, Deserialize, Clone, Data, Lens)]
+pub struct Rules {
     pub is_virtual_machine: String,
     pub xml_uri: String,
     pub host: String,

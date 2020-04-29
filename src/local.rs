@@ -1,17 +1,29 @@
-use super::android::{return_home, sleep, swipe, tap, Xpath};
-use super::config::{CFG, DCFG as d};
-pub struct Local;
+use super::android::{back, sleep, swipe, tap, Xpath};
+use super::config::Rules;
+pub struct Local {
+    local_column_name: String,
+    rules: Rules,
+}
+impl std::ops::Deref for Local {
+    type Target = Rules;
+    fn deref(&self) -> &Self::Target {
+        &self.rules
+    }
+}
 impl Local {
-    pub fn new() -> Self {
-        Self
+    pub fn new(local_column_name: String, rules: Rules) -> Self {
+        Self {
+            local_column_name,
+            rules,
+        }
     }
     fn enter(&self) {
-        return_home();
+        self.return_home();
         for _ in 0..10 {
-            let txts = d.rule_columns_content.texts();
-            let ptns = d.rule_columns_bounds.positions();
+            let txts = self.rule_columns_content.texts();
+            let ptns = self.rule_columns_bounds.positions();
             for (name, (x, y)) in txts.iter().zip(ptns.iter()) {
-                if &CFG.local_column_name == name {
+                if &self.local_column_name == name {
                     tap(*x, *y);
                     return;
                 }
@@ -21,12 +33,21 @@ impl Local {
             swipe(x1, y1, x0, y0, 500);
         }
     }
+    fn return_home(&self) {
+        let mut ptns = self.rule_bottom_work.positions();
+        while ptns.len() < 1 {
+            back();
+            ptns = self.rule_bottom_work.positions();
+        }
+        let (x, y) = ptns[0];
+        tap(x, y);
+    }
     pub fn run(&self) {
         println!("开始本地频道");
         self.enter();
-        d.rule_local_bounds.click();
+        self.rule_local_bounds.click();
         sleep(10);
-        return_home();
+        self.return_home();
         println!("本地频道结束");
     }
 }

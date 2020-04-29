@@ -1,5 +1,5 @@
-use super::android::{back, draw, input, return_home, set_ime, sleep, swipe, tap, Xpath, IME};
-use super::config::{CFG, DCFG as d};
+use super::android::{back, draw, input, set_ime, sleep, swipe, tap, Xpath, IME};
+use super::config::Rules;
 use rand::Rng;
 use serde::Deserialize;
 
@@ -29,7 +29,20 @@ fn get_comment(name: &str) -> String {
     return _comment;
 }
 
-pub struct Reader;
+pub struct Reader {
+    article_column_name: String,
+    article_count: u64,
+    article_delay: u64,
+    star_share_comment: u64,
+    keep_star_comment: bool,
+    rules: Rules,
+}
+impl std::ops::Deref for Reader {
+    type Target = Rules;
+    fn deref(&self) -> &Self::Target {
+        &self.rules
+    }
+}
 impl Drop for Reader {
     fn drop(&mut self) {
         set_ime(&IME);
@@ -37,18 +50,32 @@ impl Drop for Reader {
 }
 
 impl Reader {
-    pub fn new() -> Self {
+    pub fn new(
+        article_column_name: String,
+        article_count: u64,
+        article_delay: u64,
+        star_share_comment: u64,
+        keep_star_comment: bool,
+        rules: Rules,
+    ) -> Self {
         &IME;
         set_ime("com.android.adbkeyboard/.AdbIME");
-        Self
+        Self {
+            article_column_name,
+            article_count,
+            article_delay,
+            star_share_comment,
+            keep_star_comment,
+            rules,
+        }
     }
     fn enter(&self) {
-        return_home();
+        self.return_home();
         for _ in 0..10 {
-            let texts = d.rule_columns_content.texts();
-            let positions = d.rule_columns_bounds.positions();
+            let texts = self.rule_columns_content.texts();
+            let positions = self.rule_columns_bounds.positions();
             for (name, (x, y)) in texts.iter().zip(positions.iter()) {
-                if &CFG.article_column_name == name {
+                if self.article_column_name == *name {
                     tap(*x, *y);
                     return;
                 }
@@ -58,15 +85,24 @@ impl Reader {
             swipe(x1, y1, x0, y0, 500);
         }
     }
+    fn return_home(&self) {
+        let mut ptns = self.rule_bottom_work.positions();
+        while ptns.len() < 1 {
+            back();
+            ptns = self.rule_bottom_work.positions();
+        }
+        let (x, y) = ptns[0];
+        tap(x, y);
+    }
     pub fn run(&self) {
         println!("开始新闻学习");
         self.enter();
-        let mut ssc = CFG.star_share_comment;
+        let mut ssc = self.star_share_comment;
         let mut i = 1;
         let mut article_list = vec![];
-        while i < CFG.article_count {
-            let titles = d.rule_news_content.texts();
-            let positions = d.rule_news_bounds.positions();
+        while i < self.article_count {
+            let titles = self.rule_news_content.texts();
+            let positions = self.rule_news_bounds.positions();
             for (title, (x, y)) in titles.iter().zip(positions.iter()) {
                 if article_list.contains(title) {
                     continue;
@@ -75,11 +111,11 @@ impl Reader {
                 tap(*x, *y);
                 let now = std::time::Instant::now();
                 article_list.push(title.clone());
-                sleep(CFG.article_delay / 3);
+                sleep(self.article_delay / 3);
                 draw();
-                sleep(CFG.article_delay / 3);
+                sleep(self.article_delay / 3);
                 draw();
-                sleep(CFG.article_delay / 3);
+                sleep(self.article_delay / 3);
                 if ssc > 0 {
                     ssc -= self.star_share_comment(title);
                 }
@@ -89,44 +125,44 @@ impl Reader {
             }
             draw()
         }
-        return_home();
+        self.return_home();
         println!("新闻学习结束");
     }
 
     fn star_share_comment(&self, title: &str) -> u64 {
-        let p = d.rule_comment_bounds.texts();
+        let p = self.rule_comment_bounds.texts();
         if p.len() != 1 {
             return 0;
         }
         //  分享
-        d.rule_share_bounds.click();
-        d.rule_share2xuexi_bounds.click();
+        self.rule_share_bounds.click();
+        self.rule_share2xuexi_bounds.click();
         println!("分享一篇文章!");
         back();
 
         // 留言
-        d.rule_comment_bounds.click();
-        while let [(x, y)] = &*d.rule_comment2_bounds.positions() {
+        self.rule_comment_bounds.click();
+        while let [(x, y)] = &*self.rule_comment2_bounds.positions() {
             tap(*x, *y);
             let msg = get_comment(title);
             set_ime("com.android.adbkeyboard/.AdbIME");
             input(&msg);
             println!("留言一篇文章: {}", &msg);
         }
-        d.rule_publish_bounds.click();
+        self.rule_publish_bounds.click();
 
         // 收藏
-        d.rule_star_bounds.click();
+        self.rule_star_bounds.click();
         println!("收藏一篇文章!");
 
         // 保留评论与收藏
-        if !CFG.keep_star_comment {
-            for (x, y) in d.rule_delete_bounds.positions() {
+        if !self.keep_star_comment {
+            for (x, y) in self.rule_delete_bounds.positions() {
                 tap(x, y);
-                d.rule_delete_confirm_bounds.click();
+                self.rule_delete_confirm_bounds.click();
                 println!("删除评论");
             }
-            d.rule_star_bounds.click();
+            self.rule_star_bounds.click();
             println!("取消收藏");
         }
         return 1;

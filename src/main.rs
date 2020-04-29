@@ -3,7 +3,6 @@ extern crate diesel;
 #[macro_use]
 extern crate lazy_static;
 use serde::{Deserialize, Serialize};
-
 mod android;
 mod challenge;
 mod config;
@@ -14,7 +13,6 @@ mod reader;
 mod ui;
 mod viewer;
 use android::Xpath;
-use config::DCFG as d;
 use db::{Bank, DB};
 use std::collections::HashMap;
 use std::env;
@@ -33,13 +31,13 @@ fn xuexi(args: ui::ArgsState) {
     println!("设备名称: {}", android::DEVICE.as_str());
     if args.auto {
         println!("获取学习积分情况");
-        android::return_home();
-        d.rule_bottom_mine.click();
-        d.rule_bonus_entry.click();
+        // android::return_home();
+        args.rules.rule_bottom_mine.click();
+        args.rules.rule_bonus_entry.click();
         let mut bonus = HashMap::new();
         while bonus.len() == 0 {
-            let titles = d.rule_bonus_title.texts();
-            let scores = d.rule_bonus_score.texts();
+            let titles = args.rules.rule_bonus_title.texts();
+            let scores = args.rules.rule_bonus_score.texts();
             bonus = titles.into_iter().zip(scores.into_iter()).collect();
         }
         dbg!(&bonus);
@@ -55,19 +53,48 @@ fn xuexi(args: ui::ArgsState) {
         args.local, args.video, args.article, args.challenge, args.daily
     );
     if args.local {
-        local::Local::new().run();
+        local::Local::new(
+            args.config.local_column_name.to_string(),
+            args.rules.clone(),
+        )
+        .run();
     }
     if args.video {
-        viewer::Viewer::new().run();
+        viewer::Viewer::new(
+            args.config.video_count,
+            args.config.video_delay,
+            args.rules.clone(),
+        )
+        .run();
     }
     if args.article {
-        reader::Reader::new().run();
+        reader::Reader::new(
+            args.config.article_column_name.clone(),
+            args.config.article_count,
+            args.config.article_delay,
+            args.config.star_share_comment,
+            args.config.keep_star_comment,
+            args.rules.clone(),
+        )
+        .run();
     }
     if args.challenge {
-        challenge::Challenge::new().run();
+        challenge::Challenge::new(
+            args.config.challenge_count,
+            args.config.challenge_json.to_string(),
+            args.config.database_uri.to_string(),
+            args.rules.clone(),
+        )
+        .run();
     }
     if args.daily {
-        daily::Daily::new().run();
+        daily::Daily::new(
+            args.config.database_uri.to_string(),
+            args.config.daily_delay,
+            args.config.daily_forever,
+            args.rules.clone(),
+        )
+        .run();
     }
 }
 

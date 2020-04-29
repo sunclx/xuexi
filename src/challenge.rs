@@ -1,45 +1,69 @@
-use super::android::{content_options_positons, draw, dump, load, return_home, sleep, tap, Xpath};
-use super::config::{CFG, DCFG as d};
+use super::android::{back, content_options_positons, draw, dump, load, sleep, tap, Xpath};
+use super::config::Rules;
 use super::db::{Bank, DB};
 
 pub struct Challenge {
+    challenge_count: u64,
+    rules: Rules,
     db: DB,
     filename: String,
     bank: Bank,
     has_bank: bool,
     banks: Vec<Bank>,
 }
+impl std::ops::Deref for Challenge {
+    type Target = Rules;
+    fn deref(&self) -> &Self::Target {
+        &self.rules
+    }
+}
 impl Challenge {
-    pub fn new() -> Self {
-        let filename = CFG.challenge_json.clone();
+    pub fn new(
+        challenge_count: u64,
+        challenge_json: String,
+        database_uri: String,
+        rules: Rules,
+    ) -> Self {
+        let filename = challenge_json;
         let banks = load(&filename);
         Self {
+            challenge_count: challenge_count,
+            rules: rules,
             bank: Bank::new(),
-            db: DB::new(&CFG.database_uri),
+            db: DB::new(&database_uri),
             filename: filename,
             has_bank: false,
             banks: banks,
         }
     }
+    fn return_home(&self) {
+        let mut ptns = self.rule_bottom_work.positions();
+        while ptns.len() < 1 {
+            back();
+            ptns = self.rule_bottom_work.positions();
+        }
+        let (x, y) = ptns[0];
+        tap(x, y);
+    }
 
     pub fn run(&mut self) {
-        println!("开始挑战答题,挑战题数：{}", CFG.challenge_count);
-        return_home();
-        d.rule_bottom_mine.click();
-        d.rule_quiz_entry.click();
-        d.rule_challenge_entry.click();
+        println!("开始挑战答题,挑战题数：{}", self.challenge_count);
+        self.return_home();
+        self.rule_bottom_mine.click();
+        self.rule_quiz_entry.click();
+        self.rule_challenge_entry.click();
         sleep(2);
 
         // 开始
         let mut i = 0;
-        while i < CFG.challenge_count {
+        while i < self.challenge_count {
             print!("第{}题", i);
             self.submit();
-            d.rule_judge_bounds.positions();
-            if d.rule_judge_bounds.positions().len() > 0 {
+            self.rule_judge_bounds.positions();
+            if self.rule_judge_bounds.positions().len() > 0 {
                 self.dump();
-                d.rule_close_bounds.click();
-                d.rule_again_bounds.click();
+                self.rule_close_bounds.click();
+                self.rule_again_bounds.click();
                 sleep(2);
                 i = 0;
                 continue;
@@ -52,13 +76,13 @@ impl Challenge {
         }
         println!("已经达成目标题数（{}题），退出挑战", i);
         sleep(30);
-        return_home();
+        self.return_home();
     }
     fn submit(&mut self) {
         let (content, options, mut ptns) = content_options_positons(
-            &d.rule_challenge_content,
-            &d.rule_challenge_options_content,
-            &d.rule_challenge_options_bounds,
+            &self.rule_challenge_content,
+            &self.rule_challenge_options_content,
+            &self.rule_challenge_options_bounds,
         );
         self.bank.clear();
         self.bank.category.push_str("单选题");
@@ -93,7 +117,7 @@ impl Challenge {
         // # 点击正确选项
         while (0, 0) == ptns[cursor] {
             draw();
-            ptns = d.rule_challenge_options_bounds.positions();
+            ptns = self.rule_challenge_options_bounds.positions();
         }
         let (x, y) = ptns[cursor];
         tap(x, y);

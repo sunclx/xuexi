@@ -1,15 +1,9 @@
-use super::config::{XpathString, DCFG as d};
 use super::db::Bank;
 use regex::Regex;
 use std::process::Command;
 lazy_static! {
-    static ref FILENAME: String = { d.xml_uri.clone() };
-    pub static ref DEVICE: String = {
-       // connect(&d.host, &d.port);
-        get_devices().expect("未连接设备")
-    };
+    pub static ref DEVICE: String = { get_devices().expect("未连接设备") };
     pub static ref IME: String = { get_ime().expect("获取输入法失败") };
-    static ref SIZE: (usize, usize) = { size() };
     static ref RE_POSITION: Regex = { Regex::new(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]").unwrap() };
 }
 
@@ -110,23 +104,6 @@ pub fn get_devices() -> Option<String> {
         .next()
         .map(ToString::to_string)
 }
-pub fn size() -> (usize, usize) {
-    let output = Command::new(ADB)
-        .args(format!("-s {} shell wm size", DEVICE.as_str()).split_whitespace())
-        .output()
-        .expect("failed: ADB shell wm size");
-    let res = String::from_utf8_lossy(&output.stdout);
-    lazy_static! {
-        static ref RE: Regex = Regex::new(r"(\d+)").unwrap();
-    }
-    let nums: Vec<_> = RE
-        .captures_iter(&res)
-        .map(|cap| cap[0].parse::<usize>().unwrap())
-        .collect();
-    let l = nums.len();
-
-    return (nums[l - 2], nums[l - 1]);
-}
 pub fn uiautomator() {
     Command::new(ADB)
         .args(
@@ -139,12 +116,12 @@ pub fn uiautomator() {
         .output()
         .expect("failed");
     Command::new(ADB)
-        .args(&["pull", "/sdcard/ui.xml", &FILENAME])
+        .args(&["pull", "/sdcard/ui.xml", "./resource/ui.xml"])
         .output()
         .expect("failed");
 }
 pub fn xpath(xpath_rule: &str) -> Vec<String> {
-    let xml = std::fs::read_to_string(FILENAME.as_str()).expect("读取xml文件失败");
+    let xml = std::fs::read_to_string("./resource/ui.xml").expect("读取xml文件失败");
     let res = amxml::dom::new_document(&xml)
         .expect("解析xml文件失败")
         .root_element()
@@ -184,16 +161,6 @@ pub fn content_options_positons(
     return (content, options, positions);
 }
 
-pub fn return_home() {
-    let mut ptns = d.rule_bottom_work.positions();
-    while ptns.len() < 1 {
-        back();
-        ptns = d.rule_bottom_work.positions();
-    }
-    let (x, y) = ptns[0];
-    tap(x, y);
-}
-
 pub fn load<P: AsRef<std::path::Path>>(path: P) -> Vec<Bank> {
     let s = std::fs::read_to_string(path).unwrap();
     let v: Vec<Bank> = serde_json::from_str(&s).unwrap();
@@ -212,7 +179,7 @@ pub trait Xpath {
     fn texts(&self) -> Vec<String>;
     fn positions(&self) -> Vec<(usize, usize)>;
 }
-impl Xpath for XpathString {
+impl Xpath for String {
     fn texts(&self) -> Vec<String> {
         uiautomator();
         xpath(&self)
