@@ -193,7 +193,7 @@ rule_daily_entry ='//node[@content-desc="每日答题"]/@bounds'
 rule_challenge_entry ='//node[@content-desc="挑战答题"]/@bounds'
 # ---------------------------------------------------------------------------------------------------------------
 # 我的积分页面 Auto 2.0版本仅检查单项完成情况
-rule_bonus_title ='//node[@class="android.widget.ListView"]/node//node/node[@index="0"]/@content-desc'
+rule_bonus_title ='//node[@class="android.widget.ListView"]/node/node/node[@index="0"]/@content-desc'
 rule_bonus_score ='//node[@class="android.widget.ListView"]/node/node[@index="3"]/@content-desc'
 
 
