@@ -8,9 +8,9 @@ use druid::widget::{
 use druid::{commands, AppLauncher, Command, Data, Key, Lens, LocalizedString, Target, WindowDesc};
 use std::thread;
 lazy_static! {
+    pub static ref CONFIG_TOML:String =  std::fs::read_to_string("./config.toml").unwrap();
     pub static ref DEVICES: std::collections::HashMap<String, Rules> = {
-        let s = std::fs::read_to_string("./config.toml").unwrap();
-        let c: Configuration = toml::from_str(&s).unwrap();
+        let c: Configuration = toml::from_str(CONFIG_TOML.as_str()).unwrap();
         c.device_configs
     };
 }
@@ -23,6 +23,7 @@ pub struct ArgsState {
     pub video: bool,
     pub challenge: bool,
     pub daily: bool,
+    
     pub config: Config,
     pub rules: Rules,
     device: String,
@@ -109,8 +110,7 @@ fn build_ui() -> impl Widget<ArgsState> {
         .center()
 }
 pub fn run_ui() {
-    let s = std::fs::read_to_string("./config.toml").unwrap();
-    let config: Config = toml::from_str(&s).unwrap();
+    let config: Config = toml::from_str(CONFIG_TOML.as_str()).unwrap();
     // create the initial app state
     let initial_state = ArgsState {
         auto: true,
