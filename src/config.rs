@@ -11,7 +11,7 @@ pub struct Config {
     pub daily_json: String,
     pub challenge_json: String,
     pub comments_json: String,
-    pub is_user: bool,
+    pub is_user: Option<bool>,
     pub daily_forever: bool,
     pub daily_delay: u64,
     pub challenge_count: u64,
@@ -30,30 +30,10 @@ pub struct Config {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Configuration {
-    pub device: String,
-    pub database_uri: String,
-    pub database_json: String,
-    pub db_wrong_json: String,
-    pub daily_json: String,
-    pub challenge_json: String,
-    pub comments_json: String,
-    pub is_user: bool,
-    pub daily_forever: bool,
-    pub daily_delay: u64,
-    pub challenge_count: u64,
-    pub challenge_delay: u64,
-    pub video_column_name: String,
-    pub video_count: u64,
-    pub video_delay: u64,
-    pub enable_article_list: bool,
-    pub article_column_name: String,
-    pub local_column_name: String,
-    pub article_count: u64,
-    pub article_delay: u64,
-    pub star_share_comment: u64,
-    pub keep_star_comment: bool,
     #[serde(flatten)]
-    pub device_configs: HashMap<String, Rules>,
+    pub config: Config,
+    #[serde(flatten)]
+    pub devices: HashMap<String, Rules>,
 }
 pub type XpathString = String;
 
