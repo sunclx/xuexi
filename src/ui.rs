@@ -8,10 +8,10 @@ use druid::widget::{
 use druid::{commands, AppLauncher, Command, Data, Key, Lens, LocalizedString, Target, WindowDesc};
 use std::thread;
 lazy_static! {
-    pub static ref CONFIG_TOML:String =  std::fs::read_to_string("./config.toml").unwrap();
-    pub static ref DEVICES: std::collections::HashMap<String, Rules> = {
-        let c: Configuration = toml::from_str(CONFIG_TOML.as_str()).unwrap();
-        c.device_configs
+    pub static ref CFG: Configuration = {
+        let s = std::fs::read_to_string("./config.toml").unwrap();
+        let c: Configuration = toml::from_str(&s).unwrap();
+        c
     };
 }
 
@@ -23,44 +23,89 @@ pub struct ArgsState {
     pub video: bool,
     pub challenge: bool,
     pub daily: bool,
-    
     pub config: Config,
     pub rules: Rules,
-    device: String,
     start: bool,
-    port: String,
-    host: String,
+}
+fn row<L: Lens<Config, String> + 'static>(label: &'static str, lens: L) -> impl Widget<Config> {
+    Flex::row()
+        .with_child(Label::new(label).fix_width(120.0))
+        .with_child(TextBox::new().fix_width(200.0).lens(lens))
+        .padding(5.0)
+}
+fn setting_ui() -> impl Widget<ArgsState> {
+    let device = row("device", Config::device);
+    let database_uri = row("database_uri", Config::database_uri);
+    let database_json = row("database_json", Config::database_json);
+    let db_wrong_json = row("db_wrong_json", Config::db_wrong_json);
+    let daily_json = row("daily_json", Config::daily_json);
+    let challenge_json = row("challenge_json", Config::challenge_json);
+    let comments_json = row("comments_json", Config::comments_json);
+    //let is_user = row("is_user", Config::is_user);
+    let is_user = Flex::row()
+        .with_child(Label::new("is_user").fix_width(120.0))
+        .with_child(
+            TextBox::new()
+                .fix_width(200.0)
+                .parse()
+                .lens(Config::is_user),
+        )
+        .padding(5.0);
+    // let daily_forever = row("daily_forever", Config::daily_forever);
+    // let daily_delay = row("daily_delay", Config::daily_delay);
+    // let challenge_count = row("challenge_count", Config::challenge_count);
+    // let challenge_delay = row("challenge_delay", Config::challenge_delay);
+    let video_column_name = row("video_column_name", Config::video_column_name);
+    // let video_count = row("video_count", Config::video_count);
+    // let video_delay = row("video_delay", Config::video_delay);
+    // let enable_article_list = row("enable_article_list", Config::enable_article_list);
+    let article_column_name = row("article_column_name", Config::article_column_name);
+    let local_column_name = row("local_column_name", Config::local_column_name);
+    // let article_count = row("article_count", Config::article_count);
+    // let article_delay = row("article_delay", Config::article_delay);
+    // let star_share_comment = row("star_share_comment", Config::star_share_comment);
+    // let keep_star_comment = row("keep_star_comment", Config::keep_star_comment);
+    let flex = Flex::column()
+        .cross_axis_alignment(CrossAxisAlignment::Start)
+        .with_child(device)
+        .with_child(database_uri)
+        .with_child(database_json)
+        .with_child(db_wrong_json)
+        .with_child(daily_json)
+        .with_child(challenge_json)
+        .with_child(comments_json)
+        .with_child(is_user);
+    flex.lens(ArgsState::config)
 }
 
 fn build_ui() -> impl Widget<ArgsState> {
-    let radios = RadioGroup::new(DEVICES.keys().map(|key| (key.to_string(), key.to_string())));
+    let radios = RadioGroup::new(
+        CFG.devices
+            .keys()
+            .map(|key| (key.to_string(), key.to_string())),
+    );
     Flex::column()
         .with_child(
             Flex::row()
                 .with_child(
                     Button::new("设置").on_click(|ctx, _data: &mut ArgsState, _env| {
-                        let new_win = WindowDesc::new(build_ui).window_size((300.0, 500.0));
+                        let new_win = WindowDesc::new(setting_ui)
+                            .title(LocalizedString::new("设置"))
+                            .window_size((500.0, 300.0));
                         let command = Command::one_shot(commands::NEW_WINDOW, new_win);
                         ctx.submit_command(command, Target::Global);
                     }),
                 )
-                .with_child(radios.lens(ArgsState::device))
+                .with_child(radios.lens(Config::device).lens(ArgsState::config))
                 .padding(5.0),
         )
         .with_child(
             Flex::row()
-                .with_child(
-                    TextBox::new()
-                        .with_placeholder("host")
-                        .lens(ArgsState::host),
-                )
+                .with_child(TextBox::new().with_placeholder("host").lens(Rules::host))
                 .with_spacer(10.)
-                .with_child(
-                    TextBox::new()
-                        .with_placeholder("port")
-                        .lens(ArgsState::port),
-                )
-                .padding(5.0),
+                .with_child(TextBox::new().with_placeholder("port").lens(Rules::port))
+                .padding(5.0)
+                .lens(ArgsState::rules),
         )
         .with_child(
             Flex::row()
@@ -91,8 +136,8 @@ fn build_ui() -> impl Widget<ArgsState> {
                 .with_child(Button::new("开始").on_click(
                     move |_ctx, data: &mut ArgsState, _env| {
                         println!("{:?}", data.config.device);
-                        connect(&data.host, &data.port);
-                        data.rules = DEVICES[&data.config.device].clone();
+                        connect(&data.rules.host, &data.rules.port);
+                        data.rules = CFG.devices[&data.config.device].clone();
                         if !data.start {
                             data.start = true;
                             let data = data.clone();
@@ -110,8 +155,8 @@ fn build_ui() -> impl Widget<ArgsState> {
         .center()
 }
 pub fn run_ui() {
-    let config: Config = toml::from_str(CONFIG_TOML.as_str()).unwrap();
-    // create the initial app state
+    let config = CFG.config.clone();
+    let rules = CFG.devices[&config.device].clone();
     let initial_state = ArgsState {
         auto: true,
         local: true,
@@ -120,11 +165,8 @@ pub fn run_ui() {
         challenge: true,
         daily: true,
         config: config,
-        device: "mumu".to_string(),
-        rules: DEVICES["mumu"].clone(),
+        rules: rules,
         start: false,
-        host: DEVICES["mumu"].host.to_string(),
-        port: DEVICES["mumu"].port.to_string(),
     };
     // describe the main window
     let main_window = WindowDesc::new(build_ui)
