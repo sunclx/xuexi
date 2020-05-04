@@ -2,8 +2,8 @@ use super::android::connect;
 use super::config::{Config, Configuration, Rules};
 use druid::widget::prelude::*;
 use druid::widget::{
-    Button, Checkbox, CrossAxisAlignment, Either, Flex, Label, RadioGroup, Switch, TextBox,
-    WidgetExt,
+    Button, Checkbox, CrossAxisAlignment, Either, Flex, Label, MainAxisAlignment, RadioGroup,
+    Switch, TextBox, WidgetExt,
 };
 use druid::{commands, AppLauncher, Command, Data, Key, Lens, LocalizedString, Target, WindowDesc};
 use std::thread;
@@ -29,9 +29,27 @@ pub struct ArgsState {
 }
 fn row<L: Lens<Config, String> + 'static>(label: &'static str, lens: L) -> impl Widget<Config> {
     Flex::row()
-        .with_child(Label::new(label).fix_width(120.0))
+        .with_child(Label::new(label).fix_width(160.0))
         .with_child(TextBox::new().fix_width(200.0).lens(lens))
-        .padding(5.0)
+        .padding(4.0)
+}
+fn row_parse<
+    S: Data + std::str::FromStr + std::fmt::Display,
+    L: Lens<Config, Option<S>> + 'static,
+>(
+    label: &'static str,
+    lens: L,
+) -> impl Widget<Config> {
+    Flex::row()
+        .with_child(Label::new(label).fix_width(160.0))
+        .with_child(TextBox::new().fix_width(200.0).parse().lens(lens))
+        .padding(4.0)
+}
+fn row_bool<L: Lens<Config, bool> + 'static>(label: &'static str, lens: L) -> impl Widget<Config> {
+    Flex::row()
+        .with_child(Label::new(label).fix_width(160.0))
+        .with_child(Checkbox::new("").lens(lens))
+        .padding(4.0)
 }
 fn setting_ui() -> impl Widget<ArgsState> {
     let device = row("device", Config::device);
@@ -41,32 +59,24 @@ fn setting_ui() -> impl Widget<ArgsState> {
     let daily_json = row("daily_json", Config::daily_json);
     let challenge_json = row("challenge_json", Config::challenge_json);
     let comments_json = row("comments_json", Config::comments_json);
-    //let is_user = row("is_user", Config::is_user);
-    let is_user = Flex::row()
-        .with_child(Label::new("is_user").fix_width(120.0))
-        .with_child(
-            TextBox::new()
-                .fix_width(200.0)
-                .parse()
-                .lens(Config::is_user),
-        )
-        .padding(5.0);
-    // let daily_forever = row("daily_forever", Config::daily_forever);
-    // let daily_delay = row("daily_delay", Config::daily_delay);
-    // let challenge_count = row("challenge_count", Config::challenge_count);
-    // let challenge_delay = row("challenge_delay", Config::challenge_delay);
+    let is_user = row_bool("is_user", Config::is_user);
+    let daily_forever = row_bool("daily_forever", Config::daily_forever);
+    let daily_delay = row_parse("daily_delay", Config::daily_delay);
+    let challenge_count = row_parse("challenge_count", Config::challenge_count);
+    let challenge_delay = row_parse("challenge_delay", Config::challenge_delay);
     let video_column_name = row("video_column_name", Config::video_column_name);
-    // let video_count = row("video_count", Config::video_count);
-    // let video_delay = row("video_delay", Config::video_delay);
-    // let enable_article_list = row("enable_article_list", Config::enable_article_list);
+    let video_count = row_parse("video_count", Config::video_count);
+    let video_delay = row_parse("video_delay", Config::video_delay);
+    let enable_article_list = row_bool("enable_article_list", Config::enable_article_list);
     let article_column_name = row("article_column_name", Config::article_column_name);
     let local_column_name = row("local_column_name", Config::local_column_name);
-    // let article_count = row("article_count", Config::article_count);
-    // let article_delay = row("article_delay", Config::article_delay);
-    // let star_share_comment = row("star_share_comment", Config::star_share_comment);
-    // let keep_star_comment = row("keep_star_comment", Config::keep_star_comment);
+    let article_count = row_parse("article_count", Config::article_count);
+    let article_delay = row_parse("article_delay", Config::article_delay);
+    let star_share_comment = row_parse("star_share_comment", Config::star_share_comment);
+    let keep_star_comment = row_bool("keep_star_comment", Config::keep_star_comment);
     let flex = Flex::column()
         .cross_axis_alignment(CrossAxisAlignment::Start)
+        .main_axis_alignment(MainAxisAlignment::Start)
         .with_child(device)
         .with_child(database_uri)
         .with_child(database_json)
@@ -74,7 +84,21 @@ fn setting_ui() -> impl Widget<ArgsState> {
         .with_child(daily_json)
         .with_child(challenge_json)
         .with_child(comments_json)
-        .with_child(is_user);
+        .with_child(is_user)
+        .with_child(daily_forever)
+        .with_child(daily_delay)
+        .with_child(challenge_count)
+        .with_child(challenge_delay)
+        .with_child(video_column_name)
+        .with_child(video_count)
+        .with_child(video_delay)
+        .with_child(enable_article_list)
+        .with_child(article_column_name)
+        .with_child(local_column_name)
+        .with_child(article_count)
+        .with_child(article_delay)
+        .with_child(star_share_comment)
+        .with_child(keep_star_comment);
     flex.lens(ArgsState::config)
 }
 
@@ -91,7 +115,7 @@ fn build_ui() -> impl Widget<ArgsState> {
                     Button::new("设置").on_click(|ctx, _data: &mut ArgsState, _env| {
                         let new_win = WindowDesc::new(setting_ui)
                             .title(LocalizedString::new("设置"))
-                            .window_size((500.0, 300.0));
+                            .window_size((400.0, 700.0));
                         let command = Command::one_shot(commands::NEW_WINDOW, new_win);
                         ctx.submit_command(command, Target::Global);
                     }),

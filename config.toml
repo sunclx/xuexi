@@ -47,7 +47,7 @@ keep_star_comment = false
 [mumu]
 # 设备类型是否为模拟器 true | false
 is_virtual_machine = 'true'
-xml_uri = './resource/uimumu.xml'
+xml_uri = './resource/ui.xml'
 # host:port 指明连接的模拟器, 当is_virtual_machine = true 时有效
 # 主机 host 默认127.0.0.1
 # 端口 port 由模拟器决定
@@ -165,7 +165,7 @@ rule_comment2_bounds ='//node[@text="好观点将会被优先展示"]/@bounds'
 [huawei]
 # 设备类型是否为模拟器 true | false
 is_virtual_machine = 'false'
-xml_uri = './resource/uimumu.xml'
+xml_uri = './resource/ui.xml'
 host = '127.0.0.1'
 port = '5555'
 

@@ -61,8 +61,8 @@ fn xuexi(args: ui::ArgsState) {
     }
     if args.video {
         viewer::Viewer::new(
-            args.config.video_count,
-            args.config.video_delay,
+            args.config.video_count.unwrap(),
+            args.config.video_delay.unwrap(),
             args.rules.clone(),
         )
         .run();
@@ -70,9 +70,9 @@ fn xuexi(args: ui::ArgsState) {
     if args.article {
         reader::Reader::new(
             args.config.article_column_name.clone(),
-            args.config.article_count,
-            args.config.article_delay,
-            args.config.star_share_comment,
+            args.config.article_count.unwrap(),
+            args.config.article_delay.unwrap(),
+            args.config.star_share_comment.unwrap(),
             args.config.keep_star_comment,
             args.rules.clone(),
         )
@@ -80,7 +80,7 @@ fn xuexi(args: ui::ArgsState) {
     }
     if args.challenge {
         challenge::Challenge::new(
-            args.config.challenge_count,
+            args.config.challenge_count.unwrap(),
             args.config.challenge_json.to_string(),
             args.config.database_uri.to_string(),
             args.rules.clone(),
@@ -90,7 +90,7 @@ fn xuexi(args: ui::ArgsState) {
     if args.daily {
         daily::Daily::new(
             args.config.database_uri.to_string(),
-            args.config.daily_delay,
+            args.config.daily_delay.unwrap(),
             args.config.daily_forever,
             args.rules.clone(),
         )
