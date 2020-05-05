@@ -74,7 +74,7 @@ fn setting_ui() -> impl Widget<ArgsState> {
     let article_delay = row_parse("article_delay", Config::article_delay);
     let star_share_comment = row_parse("star_share_comment", Config::star_share_comment);
     let keep_star_comment = row_bool("keep_star_comment", Config::keep_star_comment);
-    let flex = Flex::column()
+    Flex::column()
         .cross_axis_alignment(CrossAxisAlignment::Start)
         .main_axis_alignment(MainAxisAlignment::Start)
         .with_child(device)
@@ -98,8 +98,8 @@ fn setting_ui() -> impl Widget<ArgsState> {
         .with_child(article_count)
         .with_child(article_delay)
         .with_child(star_share_comment)
-        .with_child(keep_star_comment);
-    flex.lens(ArgsState::config)
+        .with_child(keep_star_comment)
+        .lens(ArgsState::config)
 }
 
 fn build_ui() -> impl Widget<ArgsState> {
