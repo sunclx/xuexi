@@ -143,7 +143,18 @@ fn build_ui() -> impl Widget<ArgsState> {
             Flex::row(),
             Flex::column()
                 .cross_axis_alignment(CrossAxisAlignment::Start)
-                .with_child(Checkbox::new("本地频道").lens(ArgsState::local))
+                .with_child(
+                    Flex::row()
+                        .with_child(Checkbox::new("本地频道").lens(ArgsState::local))
+                        .with_child(Button::new("运行").on_click(
+                            move |_ctx, data: &mut ArgsState, _env| {
+                                connect(&data.rules.host, &data.rules.port);
+                                data.rules = CFG.devices[&data.config.device].clone();
+                                let data = data.clone();
+                                thread::spawn(move || super::local::Local::start(data));
+                            },
+                        )),
+                )
                 .with_spacer(10.)
                 .with_child(Checkbox::new("视听学习").lens(ArgsState::video))
                 .with_spacer(10.)
@@ -165,7 +176,7 @@ fn build_ui() -> impl Widget<ArgsState> {
                         if !data.start {
                             data.start = true;
                             let data = data.clone();
-                            thread::spawn(move || super::xuexi(data.clone()));
+                            thread::spawn(move || super::xuexi(data));
                         }
                     },
                 ))

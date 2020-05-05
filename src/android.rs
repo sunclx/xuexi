@@ -3,7 +3,6 @@ use regex::Regex;
 use std::process::Command;
 lazy_static! {
     pub static ref DEVICE: String = { get_devices().expect("未连接设备") };
-    pub static ref IME: String = { get_ime().expect("获取输入法失败") };
     static ref RE_POSITION: Regex = { Regex::new(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]").unwrap() };
 }
 
