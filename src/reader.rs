@@ -1,4 +1,4 @@
-use super::android::{back, draw, input, set_ime, sleep, swipe, tap, Xpath, IME};
+use super::android::{back, draw, get_ime, input, set_ime, sleep, swipe, tap, Xpath};
 use super::config::Rules;
 use rand::Rng;
 use serde::Deserialize;
@@ -30,6 +30,7 @@ fn get_comment(name: &str) -> String {
 }
 
 pub struct Reader {
+    ime: String,
     article_column_name: String,
     article_count: u64,
     article_delay: u64,
@@ -45,7 +46,7 @@ impl std::ops::Deref for Reader {
 }
 impl Drop for Reader {
     fn drop(&mut self) {
-        set_ime(&IME);
+        set_ime(&self.ime);
     }
 }
 
@@ -58,9 +59,10 @@ impl Reader {
         keep_star_comment: bool,
         rules: Rules,
     ) -> Self {
-        &IME;
+        let ime = get_ime().unwrap();
         set_ime("com.android.adbkeyboard/.AdbIME");
         Self {
+            ime,
             article_column_name,
             article_count,
             article_delay,

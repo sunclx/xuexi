@@ -1,10 +1,11 @@
 use super::android::{
-    back, content_options_positons, draw, input, set_ime, sleep, tap, Xpath, IME,
+    back, content_options_positons, draw, get_ime, input, set_ime, sleep, tap, Xpath,
 };
 use super::config::Rules;
 use super::db::*;
 
 pub struct Daily {
+    ime: String,
     daily_delay: u64,
     daily_forever: bool,
     rules: Rules,
@@ -21,14 +22,15 @@ impl std::ops::Deref for Daily {
 }
 impl Drop for Daily {
     fn drop(&mut self) {
-        set_ime(&IME);
+        set_ime(&self.ime);
     }
 }
 impl Daily {
     pub fn new(database_uri: String, daily_delay: u64, daily_forever: bool, rules: Rules) -> Self {
-        &IME;
+        let ime = get_ime().unwrap();
         set_ime("com.android.adbkeyboard/.AdbIME");
         Self {
+            ime,
             daily_delay: daily_delay,
             daily_forever: daily_forever,
             rules: rules,

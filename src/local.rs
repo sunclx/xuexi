@@ -1,5 +1,6 @@
 use super::android::{back, sleep, swipe, tap, Xpath};
 use super::config::Rules;
+use super::ui;
 pub struct Local {
     local_column_name: String,
     rules: Rules,
@@ -16,6 +17,13 @@ impl Local {
             local_column_name,
             rules,
         }
+    }
+    pub fn start(args: ui::ArgsState) {
+        Local::new(
+            args.config.local_column_name.to_string(),
+            args.rules.clone(),
+        )
+        .run();
     }
     fn enter(&self) {
         self.return_home();
