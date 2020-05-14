@@ -30,14 +30,14 @@ impl Local {
         for _ in 0..10 {
             let txts = self.rule_columns_content.texts();
             let ptns = self.rule_columns_bounds.positions();
-            for (name, (x, y)) in txts.iter().zip(ptns.iter()) {
+            let (x0, y0) = ptns[0];
+            let (x1, y1) = ptns[ptns.len() - 2];
+            for (name, (x, y)) in txts.iter().zip(ptns) {
                 if &self.local_column_name == name {
-                    tap(*x, *y);
+                    tap(x, y);
                     return;
                 }
             }
-            let (x0, y0) = ptns[0];
-            let (x1, y1) = ptns[ptns.len() - 2];
             swipe(x1, y1, x0, y0, 500);
         }
     }

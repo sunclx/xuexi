@@ -138,16 +138,16 @@ impl Daily {
             if answer == "" {
                 answer = "不忘初心牢记使命".to_string();
             }
-            for (answer, (x, y)) in answer.chars().zip(edits.iter()) {
-                tap(*x, *y);
+            for (answer, (x, y)) in answer.chars().zip(edits) {
+                tap(x, y);
                 input(&answer.to_string());
             }
         } else {
             self.has_bank = false;
             println!("{}", &self.bank);
             println!("默认提交答案: 不忘初心牢记使命");
-            for ((x, y), answer) in edits.iter().zip("不忘初心牢记使命".chars()) {
-                tap(*x, *y);
+            for (answer, (x, y)) in "不忘初心牢记使命".chars().zip(edits) {
+                tap(x, y);
                 input(&answer.to_string());
             }
         }

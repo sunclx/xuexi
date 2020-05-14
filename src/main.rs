@@ -36,7 +36,7 @@ fn xuexi(args: ui::ArgsState) {
         while bonus.len() == 0 {
             let titles = args.rules.rule_bonus_title.texts();
             let scores = args.rules.rule_bonus_score.texts();
-            bonus = titles.into_iter().zip(scores.into_iter()).collect();
+            bonus = titles.into_iter().zip(scores).collect();
         }
         dbg!(&bonus);
         let completed = "已完成";

@@ -76,14 +76,14 @@ impl Reader {
         for _ in 0..10 {
             let texts = self.rule_columns_content.texts();
             let positions = self.rule_columns_bounds.positions();
-            for (name, (x, y)) in texts.iter().zip(positions.iter()) {
+            let (x0, y0) = positions[0];
+            let (x1, y1) = positions[positions.len() - 2];
+            for (name, (x, y)) in texts.iter().zip(positions) {
                 if self.article_column_name == *name {
-                    tap(*x, *y);
+                    tap(x, y);
                     return;
                 }
             }
-            let (x0, y0) = positions[0];
-            let (x1, y1) = positions[positions.len() - 2];
             swipe(x1, y1, x0, y0, 500);
         }
     }
@@ -105,12 +105,12 @@ impl Reader {
         while i < self.article_count {
             let titles = self.rule_news_content.texts();
             let positions = self.rule_news_bounds.positions();
-            for (title, (x, y)) in titles.iter().zip(positions.iter()) {
+            for (title, (x, y)) in titles.iter().zip(positions) {
                 if article_list.contains(title) {
                     continue;
                 }
                 println!("新闻[{}]: {}", i, title);
-                tap(*x, *y);
+                tap(x, y);
                 let now = std::time::Instant::now();
                 article_list.push(title.clone());
                 sleep(self.article_delay / 3);
