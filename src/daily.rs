@@ -52,7 +52,7 @@ impl Daily {
     pub fn run(&mut self) {
         println!("开始每日答题");
         self.return_home();
-        let count = 10;
+        let count = 5;
         let daily_delay = self.daily_delay;
         self.rule_bottom_mine.click();
         self.rule_quiz_entry.click();

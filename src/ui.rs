@@ -5,7 +5,7 @@ use druid::widget::{
     Button, Checkbox, CrossAxisAlignment, Either, Flex, Label, MainAxisAlignment, RadioGroup,
     Switch, TextBox, WidgetExt,
 };
-use druid::{commands, AppLauncher, Command, Data, Key, Lens, LocalizedString, Target, WindowDesc};
+use druid::{commands, AppLauncher, Data, Key, Lens, LocalizedString, Target, WindowDesc};
 use std::thread;
 lazy_static! {
     pub static ref CFG: Configuration = {
@@ -116,8 +116,7 @@ fn build_ui() -> impl Widget<ArgsState> {
                         let new_win = WindowDesc::new(setting_ui)
                             .title(LocalizedString::new("设置"))
                             .window_size((400.0, 700.0));
-                        let command = Command::one_shot(commands::NEW_WINDOW, new_win);
-                        ctx.submit_command(command, Target::Global);
+                        ctx.new_window(new_win);
                     }),
                 )
                 .with_child(radios.lens(Config::device).lens(ArgsState::config))

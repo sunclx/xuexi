@@ -99,7 +99,7 @@ rule_bonus_score = '//node[@class="android.widget.ListView"]/node/node[4]/@conte
 
 # 每日答题xpath规则
 # 题型：填空题、单选题、多选题
-rule_type = '//node[@content-desc="1 /10" or @content-desc="2 /10" or @content-desc="3 /10" or @content-desc="4 /10" or @content-desc="5 /10" or @content-desc="6 /10" or @content-desc="7 /10" or @content-desc="8 /10" or @content-desc="9 /10"  or @content-desc="10 /10"]/preceding-sibling::node[1]/@content-desc'
+rule_type = '//node[@content-desc="1 /5" or @content-desc="2 /5" or @content-desc="3 /5" or @content-desc="4 /5" or @content-desc="5 /5"]/preceding-sibling::node[1]/@content-desc'
 # 题干
 rule_content = '//node[@class="android.widget.ListView"]/../node[@index="2"]/@content-desc'
 rule_blank_content = '//node[@class="android.widget.EditText"]/../node[@class="android.view.View"]/@content-desc'

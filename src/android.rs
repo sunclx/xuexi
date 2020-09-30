@@ -2,8 +2,8 @@ use super::db::Bank;
 use regex::Regex;
 use std::process::Command;
 lazy_static! {
-    pub static ref DEVICE: String = { get_devices().expect("未连接设备") };
-    static ref RE_POSITION: Regex = { Regex::new(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]").unwrap() };
+    pub static ref DEVICE: String = get_devices().expect("未连接设备");
+    static ref RE_POSITION: Regex = Regex::new(r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]").unwrap();
 }
 
 #[cfg(target_os = "windows")]

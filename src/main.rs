@@ -42,7 +42,7 @@ fn xuexi(args: ui::ArgsState) {
         let completed = "已完成";
         args.local = completed != bonus["本地频道"];
         args.video = completed != bonus["视听学习"] || completed != bonus["视听学习时长"];
-        args.article = completed != bonus["阅读文章"] || completed != bonus["文章学习时长"];
+        args.article = completed != bonus["我要选读文章"];
         args.challenge = completed != bonus["挑战答题"];
         args.daily = completed != bonus["每日答题"];
     }
